@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, ShoppingCart, Clock } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/UseAuth";
 
 interface FoodCardProps {
   food: {
@@ -29,7 +29,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite
 
   const handleAddToCart = () => {
     if (!user) {
-      toast.error("Please login to add items to cart");
+      toast.error(isHovered ? "Please login to add items to cart": "Please login to add items to cart");
       navigate("/auth");
       return;
     }

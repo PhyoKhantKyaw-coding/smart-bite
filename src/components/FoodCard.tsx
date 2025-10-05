@@ -39,7 +39,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite
 
   const handleToggleFavorite = () => {
     if (!user) {
-      toast.error("Please login to add favorites");
+      toast.error(isHovered ? "Please login to add favorites":"Please login to add favorites");
       navigate("/auth");
       return;
     }
