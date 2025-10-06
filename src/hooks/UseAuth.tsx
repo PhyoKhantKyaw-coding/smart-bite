@@ -6,51 +6,104 @@ import { setUser } from "@/store/authSlice";
 import { useNavigate } from "react-router-dom";
 
 interface AuthUser {
+  userId: string;
   email: string;
+  userName: string;
   role: "user" | "admin" | "delivery";
+  token: string;
 }
 
-interface AccountData {
-  password: string;
-  role: AuthUser["role"];
+// Decode JWT token
+function decodeToken(token: string): DecodedToken | null {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    
+    const decoded = JSON.parse(jsonPayload);
+    return {
+      userId: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || decoded.nameid || decoded.sub,
+      role: decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decoded.role,
+      userName: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || decoded.name,
+      exp: decoded.exp
+    };
+  } catch (error) {
+    console.error("Failed to decode token:", error);
+    return null;
+  }
 }
-
-const accounts: Record<string, AccountData> = {
-  "pkk1@gmail.com": { password: "P@ssw0rd", role: "user" },
-  "pkk2@gmail.com": { password: "P@ssw0rd", role: "admin" },
-  "pkk3@gmail.com": { password: "P@ssw0rd", role: "delivery" },
-};
 
 export function useAuth() {
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
   const navigate = useNavigate();
 
-  const login = (email: string, password: string): boolean => {
-    const account = accounts[email];
-    if (account && account.password === password) {
-      const userData: AuthUser = { email, role: account.role };
-      dispatch(setUser(userData));
-      localStorage.setItem("user", JSON.stringify(userData));
-      // Redirect based on role
-      if (userData.role === "admin") navigate("/admin");
-      else if (userData.role === "delivery") navigate("/delivery");
-      else navigate("/user");
-      return true;
+  const setAuthUser = (token: string, userName?: string, roleName?: string) => {
+    const decoded = decodeToken(token);
+    if (!decoded) {
+      console.error("Invalid token");
+      return false;
     }
-    return false;
+
+    const userData: AuthUser = {
+      userId: decoded.userId,
+      email: "",
+      userName: userName || decoded.userName,
+      role: (roleName || decoded.role).toLowerCase() as "user" | "admin" | "delivery",
+      token: token
+    };
+
+    dispatch(setUser(userData));
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("user", JSON.stringify(userData));
+
+    // Redirect based on role
+    if (userData.role === "admin") navigate("/admin");
+    else if (userData.role === "delivery") navigate("/delivery");
+    else navigate("/user");
+
+    return true;
   };
 
   const logout = (): void => {
     dispatch(setUser(null));
+    localStorage.removeItem("authToken");
     localStorage.removeItem("user");
     navigate("/");
   };
 
+  const isTokenValid = (): boolean => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return false;
+
+    const decoded = decodeToken(token);
+    if (!decoded) return false;
+
+    // Check if token is expired
+    const currentTime = Date.now() / 1000;
+    return decoded.exp > currentTime;
+  };
+
   React.useEffect(() => {
+    const token = localStorage.getItem("authToken");
     const stored = localStorage.getItem("user");
-    if (stored) dispatch(setUser(JSON.parse(stored)));
+    
+    if (token && stored) {
+      const decoded = decodeToken(token);
+      if (decoded) {
+        const currentTime = Date.now() / 1000;
+        if (decoded.exp > currentTime) {
+          dispatch(setUser(JSON.parse(stored)));
+        } else {
+          // Token expired, clear everything
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("user");
+        }
+      }
+    }
   }, [dispatch]);
 
-  return { user, login, logout };
+  return { user, setAuthUser, logout, isTokenValid };
 }

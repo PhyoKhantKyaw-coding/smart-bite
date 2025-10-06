@@ -2,66 +2,624 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/UseAuth';
 import { useNavigate } from 'react-router-dom';
+import { loginUser, googleLogin, registerUser, verifyEmail, resetOTP, forgetPassword } from '@/api/auth';
+import { getUserLocation, getDeviceToken } from '@/lib/deviceUtils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
 
 const LoginView = () => {
-  const { login, user } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [open, setOpen] = useState(true);
+  const { setAuthUser, user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const navigate = useNavigate();
+
+  // Login state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+
+  // Signup state
+  const [signupData, setSignupData] = useState({
+    userName: '',
+    userEmail: '',
+    userPassword: '',
+    userPhNo: ''
+  });
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [signupError, setSignupError] = useState('');
+
+  // OTP Dialog state
+  const [showOtpDialog, setShowOtpDialog] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState('');
+
+  // Forget Password Dialog state
+  const [showForgetPasswordDialog, setShowForgetPasswordDialog] = useState(false);
+  const [forgetPasswordEmail, setForgetPasswordEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [forgetPasswordError, setForgetPasswordError] = useState('');
+
+  const loginMutation = loginUser.useMutation({
+    onSuccess: (data) => {
+      if (data.status === 0 && data.data?.token) {
+        setAuthUser(data.data.token, data.data.userName, data.data.roleName);
+        setLoginError('');
+      } else {
+        setLoginError(data.message || 'Login failed');
+      }
+    },
+    onError: (error) => {
+      setLoginError('An error occurred during login');
+      console.error(error);
+    }
+  });
+
+  const googleLoginMutation = googleLogin.useMutation({
+    onSuccess: (data) => {
+      if (data.status === 0 && data.data?.token) {
+        setAuthUser(data.data.token, data.data.userName, data.data.roleName);
+      } else {
+        setLoginError(data.message || 'Google login failed');
+      }
+    },
+    onError: (error) => {
+      setLoginError('An error occurred during Google login');
+      console.error(error);
+    }
+  });
+
+  const signupMutation = registerUser.useMutation({
+    onSuccess: (data) => {
+      if (data.status === 0) {
+        // Show OTP verification dialog instead of auto-login
+        setOtpEmail(signupData.userEmail);
+        setShowOtpDialog(true);
+        setSignupError('');
+        // Clear signup input fields
+        setSignupData({ userName: '', userEmail: '', userPassword: '', userPhNo: '' });
+        setProfileImage(null);
+      } else {
+        setSignupError(data.message || 'Signup failed');
+      }
+    },
+    onError: (error) => {
+      setSignupError('An error occurred during signup');
+      console.error(error);
+    }
+  });
+
+  const verifyEmailMutation = verifyEmail.useMutation({
+    onSuccess: (data) => {
+      if (data.status === 0) {
+        setOtpError('');
+        setShowOtpDialog(false);
+        setActiveTab('login');
+        setLoginEmail(otpEmail);
+      } else {
+        setOtpError('Invalid OTP code');
+      }
+    },
+    onError: (error) => {
+      setOtpError('An error occurred during verification');
+      console.error(error);
+    }
+  });
+
+  const resendOtpMutation = resetOTP.useMutation({
+    onSuccess: (data) => {
+      if (data.data === true) {
+        setOtpError('');
+      } else {
+        setOtpError('Failed to resend OTP');
+      }
+    },
+    onError: (error) => {
+      setOtpError('An error occurred while resending OTP');
+      console.error(error);
+    }
+  });
+
+  const forgetPasswordMutation = forgetPassword.useMutation({
+    onSuccess: (data) => {
+      if (data.status === 0 && data.data === true) {
+        setShowForgetPasswordDialog(false);
+        setForgetPasswordError('');
+        setLoginEmail(forgetPasswordEmail);
+      } else {
+        setForgetPasswordError(data.message || 'Failed to reset password');
+      }
+    },
+    onError: (error) => {
+      setForgetPasswordError('An error occurred while resetting password');
+      console.error(error);
+    }
+  });
 
   React.useEffect(() => {
     if (user) {
-      setOpen(false);
       navigate('/');
     }
   }, [user, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = login(email, password);
-    if (!success) {
-      setError('Invalid email or password');
-    } else {
-      setError('');
-      // Dialog will close via useEffect
+    setLoginError('');
+    loginMutation.mutate({
+      UserEmail: loginEmail,
+      Password: loginPassword
+    });
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoginError('');
+    // This would typically open Google OAuth flow
+    // For now, we'll simulate with a placeholder
+    // You'll need to integrate Google Sign-In library
+    try {
+      // @ts-expect-error - Google Sign-In would be loaded externally
+      if (window.google && window.google.accounts) {
+        // @ts-expect-error - Google Sign-In API
+        window.google.accounts.id.initialize({
+          client_id: '758570961714-gbt9gun7g7dm1kfbm5b8oe8ujl9ti5te.apps.googleusercontent.com',
+          callback: (response: { credential: string }) => {
+            googleLoginMutation.mutate(response.credential);
+          }
+        });
+        // @ts-expect-error - Google Sign-In API
+        window.google.accounts.id.prompt();
+      } else {
+        setLoginError('Google Sign-In not available. Please load the Google library.');
+      }
+    } catch (error) {
+      setLoginError('Failed to initialize Google Sign-In');
+      console.error(error);
     }
   };
 
-  if (!open) return null;
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupError('');
+
+    try {
+      // Get location and device token
+      const location = await getUserLocation();
+      const deviceToken = getDeviceToken();
+
+      const formData = new FormData();
+      formData.append('UserName', signupData.userName);
+      formData.append('UserEmail', signupData.userEmail);
+      formData.append('UserPassword', signupData.userPassword);
+      formData.append('UserPhNo', signupData.userPhNo);
+      formData.append('RoleName', 'User');
+      formData.append('Latitude', location.latitude.toString());
+      formData.append('Longitude', location.longitude.toString());
+      formData.append('DeviceToken', deviceToken);
+      
+      if (profileImage) {
+        formData.append('UserProfileFile', profileImage);
+      }
+
+      signupMutation.mutate(formData);
+    } catch (error) {
+      setSignupError('Failed to get location or device information');
+      console.error(error);
+    }
+  };
+
+  const handleVerifyOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpError('');
+    verifyEmailMutation.mutate({ email: otpEmail, otp: otpCode });
+  };
+
+  const handleResendOtp = () => {
+    resendOtpMutation.mutate(otpEmail);
+  };
+
+  const handleForgetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgetPasswordError('');
+    forgetPasswordMutation.mutate({ email: forgetPasswordEmail, newPassword });
+  };
+
+  if (user) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-      <div className="bg-white rounded-lg shadow-lg w-[400px] h-[400px] flex flex-col justify-center p-8">
-        <form onSubmit={handleSubmit} className="flex flex-col h-full justify-center">
-          <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-primary"
-              required
-            />
+    <div className="relative w-full h-screen overflow-hidden">
+      {/* HeroSection Background */}
+      <div className="absolute inset-0">
+        <section className="relative w-full h-full overflow-hidden text-yellow-900" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)' }}>
+          {/* Map illustration background */}
+          <svg className="absolute inset-0 w-full h-full z-0" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+            <rect x="0" y="0" width="1200" height="800" fill="#fef9c3" />
+            
+            {/* Curved road path */}
+            <path d="M 80 720 C 200 720, 250 560, 320 560 C 390 560, 430 720, 500 720 C 570 720, 610 480, 680 480 C 750 480, 790 640, 860 640 C 930 640, 1000 280, 1120 200" 
+              stroke="#fbbf24" strokeWidth="12" fill="none" strokeLinecap="round" opacity="0.6" />
+            
+            {/* Store icon at start */}
+            <g transform="translate(60, 700)">
+              <rect x="0" y="0" width="40" height="40" rx="8" fill="#34d399" />
+              <text x="20" y="28" fontSize="24" textAnchor="middle" fill="#fff">🏪</text>
+            </g>
+            
+            {/* Customer home at end */}
+            <g transform="translate(1100, 180)">
+              <rect x="0" y="0" width="40" height="40" rx="8" fill="#f472b6" />
+              <text x="20" y="28" fontSize="24" textAnchor="middle" fill="#fff">🏠</text>
+            </g>
+          </svg>
+
+          {/* Raining food icons */}
+          <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
+            {[...Array(30)].map((_, i) => {
+              const icons = ["🍔","🍕","🍣","🍜","🍟","🥗","🍩","🍦"];
+              const icon = icons[i % icons.length];
+              const left = Math.random() * 98;
+              const duration = 4 + Math.random() * 4;
+              const delay = Math.random() * 3;
+              return (
+                <span
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    left: `${left}%`,
+                    top: '-40px',
+                    fontSize: `${20 + Math.random() * 16}px`,
+                    opacity: 0.15 + Math.random() * 0.2,
+                    animation: `foodRain ${duration}s linear infinite`,
+                    animationDelay: `${delay}s`,
+                  }}
+                >{icon}</span>
+              );
+            })}
+            <style>{`
+              @keyframes foodRain {
+                0% { top: -40px; }
+                100% { top: 100vh; }
+              }
+            `}</style>
           </div>
-          <div className="mb-4">
-            <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-primary"
-              required
-            />
-          </div>
-          {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
-          <button type="submit" className="w-full py-2 px-4 bg-black text-white rounded hover:bg-primary transition">Login</button>
-        </form>
+        </section>
       </div>
+
+      {/* Auth Form Container */}
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-yellow-400">
+          <div className="grid md:grid-cols-2">
+            {/* Left Side - Branding */}
+            <div className="hidden md:flex flex-col justify-center p-12 bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
+              <h2 className="text-4xl font-bold mb-4">Smart Bite</h2>
+              <p className="text-lg mb-6">Delicious Food, Delivered Fast</p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🍔</span>
+                  <span>Wide variety of cuisines</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🚴‍♂️</span>
+                  <span>Fast delivery</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">⭐</span>
+                  <span>Top-rated restaurants</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side - Auth Forms */}
+            <div className="p-8 md:p-12">
+              {/* Tabs */}
+              <div className="flex border-b border-gray-200 mb-8">
+                <button
+                  className={`flex-1 pb-4 text-lg font-semibold transition-colors ${
+                    activeTab === 'login'
+                      ? 'border-b-2 border-yellow-500 text-yellow-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => setActiveTab('login')}
+                >
+                  Login
+                </button>
+                <button
+                  className={`flex-1 pb-4 text-lg font-semibold transition-colors ${
+                    activeTab === 'signup'
+                      ? 'border-b-2 border-yellow-500 text-yellow-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => setActiveTab('signup')}
+                >
+                  Sign Up
+                </button>
+              </div>
+
+              {/* Login Form */}
+              {activeTab === 'login' && (
+                <form onSubmit={handleLogin} className="space-y-6">
+                  <div>
+                    <label htmlFor="login-email" className="block text-sm font-medium mb-2">Email</label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      value={loginEmail}
+                      onChange={e => setLoginEmail(e.target.value)}
+                      placeholder="your.email@example.com"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="login-password" className="block text-sm font-medium mb-2">Password</label>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      value={loginPassword}
+                      onChange={e => setLoginPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+                  {loginError && <div className="text-red-500 text-sm">{loginError}</div>}
+                  
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgetPasswordDialog(true)}
+                      className="text-sm text-yellow-600 hover:text-yellow-700 hover:underline"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                    disabled={loginMutation.isPending}
+                  >
+                    {loginMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Logging in...
+                      </>
+                    ) : 'Login'}
+                  </Button>
+
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300"
+                    disabled={googleLoginMutation.isPending}
+                  >
+                    {googleLoginMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Sign in with Google
+                      </>
+                    )}
+                  </Button>
+                </form>
+              )}
+
+              {/* Signup Form */}
+              {activeTab === 'signup' && (
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div>
+                    <label htmlFor="signup-name" className="block text-sm font-medium mb-2">Full Name</label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      value={signupData.userName}
+                      onChange={e => setSignupData({...signupData, userName: e.target.value})}
+                      placeholder="John Doe"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="signup-email" className="block text-sm font-medium mb-2">Email</label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      value={signupData.userEmail}
+                      onChange={e => setSignupData({...signupData, userEmail: e.target.value})}
+                      placeholder="your.email@example.com"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="signup-phone" className="block text-sm font-medium mb-2">Phone Number</label>
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      value={signupData.userPhNo}
+                      onChange={e => setSignupData({...signupData, userPhNo: e.target.value})}
+                      placeholder="+1234567890"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="signup-password" className="block text-sm font-medium mb-2">Password</label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      value={signupData.userPassword}
+                      onChange={e => setSignupData({...signupData, userPassword: e.target.value})}
+                      placeholder="••••••••"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="signup-profile" className="block text-sm font-medium mb-2">Profile Picture (Optional)</label>
+                    <Input
+                      id="signup-profile"
+                      type="file"
+                      accept="image/*"
+                      onChange={e => setProfileImage(e.target.files?.[0] || null)}
+                      className="w-full"
+                    />
+                  </div>
+                  {signupError && <div className="text-red-500 text-sm">{signupError}</div>}
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                    disabled={signupMutation.isPending}
+                  >
+                    {signupMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : 'Sign Up'}
+                  </Button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* OTP Verification Dialog */}
+      <Dialog open={showOtpDialog} onOpenChange={setShowOtpDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verify Your Email</DialogTitle>
+            <DialogDescription>
+              We've sent a verification code to {otpEmail}. Please enter it below.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <div>
+              <label htmlFor="otp-code" className="block text-sm font-medium mb-2">Verification Code</label>
+              <Input
+                id="otp-code"
+                type="text"
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value)}
+                placeholder="Enter 6-digit code"
+                className="w-full"
+                maxLength={6}
+                required
+              />
+            </div>
+            {otpError && <div className="text-red-500 text-sm">{otpError}</div>}
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleResendOtp}
+                disabled={resendOtpMutation.isPending}
+                className="w-full sm:w-auto"
+              >
+                {resendOtpMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Resending...
+                  </>
+                ) : 'Resend Code'}
+              </Button>
+              <Button
+                type="submit"
+                className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600"
+                disabled={verifyEmailMutation.isPending}
+              >
+                {verifyEmailMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verifying...
+                  </>
+                ) : 'Verify Email'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Forget Password Dialog */}
+      <Dialog open={showForgetPasswordDialog} onOpenChange={setShowForgetPasswordDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Enter your email and new password to reset your account password.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgetPassword} className="space-y-4">
+            <div>
+              <label htmlFor="forget-email" className="block text-sm font-medium mb-2">Email</label>
+              <Input
+                id="forget-email"
+                type="email"
+                value={forgetPasswordEmail}
+                onChange={e => setForgetPasswordEmail(e.target.value)}
+                placeholder="your.email@example.com"
+                className="w-full"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="forget-new-password" className="block text-sm font-medium mb-2">New Password</label>
+              <Input
+                id="forget-new-password"
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full"
+                required
+              />
+            </div>
+            {forgetPasswordError && <div className="text-red-500 text-sm">{forgetPasswordError}</div>}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowForgetPasswordDialog(false)}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600"
+                disabled={forgetPasswordMutation.isPending}
+              >
+                {forgetPasswordMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Resetting...
+                  </>
+                ) : 'Reset Password'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

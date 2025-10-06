@@ -1,12 +1,13 @@
 import axios from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
-axios.defaults.baseURL = 'https://dummyjson.com/';
+// Update this URL to your backend API
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7112/api/';
 
 // Add a request interceptor
 axios.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token'); // Assuming the token is stored in localStorage
+    const token = localStorage.getItem('authToken'); // Use authToken instead of token
     if (token) {
       config.headers!.Authorization = `Bearer ${token}`;
     }
@@ -24,7 +25,9 @@ axios.interceptors.response.use(
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Redirect to login page if unauthorized
+      // Clear auth data and redirect to login page if unauthorized
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
