@@ -50,7 +50,7 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
           fontSize: 44, 
           animation: 'deliveryRoute 8s ease-in-out infinite',
           transformOrigin: 'center',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2)'
         }}>
           🚴‍♂️
           {/* Delivery box */}
@@ -70,7 +70,8 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
           animation: 'deliveryReturn 8s ease-in-out infinite',
           animationDelay: '4s',
           transformOrigin: 'center',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+          transform: 'scaleX(-1)'
         }}>
           🚴‍♂️
         </div>

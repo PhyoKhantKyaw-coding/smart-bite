@@ -1,0 +1,196 @@
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Minus, Trash2, ShoppingCart, Package } from "lucide-react";
+
+interface OtherTopicModel {
+  otherId: string;
+  otherName: string;
+}
+
+interface GetCartDTO {
+  foodId: string;
+  name: string;
+  eachPrice: number;
+  cookingTime: number;
+  foodImage: string;
+  foodDescription: string;
+  catName: string;
+  quantity: number;
+  topics?: OtherTopicModel[];
+}
+
+interface CartDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  cartItems: GetCartDTO[];
+  onUpdateQuantity?: (foodId: string, quantity: number) => void;
+  onRemoveItem?: (foodId: string) => void;
+  onProceedToOrder?: () => void;
+}
+
+const CartDialog: React.FC<CartDialogProps> = ({
+  open,
+  onOpenChange,
+  cartItems,
+  onUpdateQuantity,
+  onRemoveItem,
+  onProceedToOrder,
+}) => {
+  const handleQuantityChange = (foodId: string, increment: boolean) => {
+    const item = cartItems.find((i) => i.foodId === foodId);
+    if (!item) return;
+
+    const newQuantity = increment
+      ? Math.min(item.quantity + 1, 99)
+      : Math.max(item.quantity - 1, 1);
+
+    onUpdateQuantity?.(foodId, newQuantity);
+  };
+
+  const calculateTotal = () => {
+    return cartItems.reduce((total, item) => total + item.eachPrice * item.quantity, 0);
+  };
+
+  const totalAmount = calculateTotal();
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-[95%] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            <ShoppingCart className="w-6 h-6" />
+            Shopping Cart
+          </DialogTitle>
+          <DialogDescription>
+            Review your items and proceed to checkout
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {cartItems.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
+              <p className="text-muted-foreground">Add some delicious items to get started!</p>
+            </div>
+          ) : (
+            <>
+              {/* Cart Items */}
+              <div className="space-y-3">
+                {cartItems.map((item) => (
+                  <Card key={item.foodId} className="overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4">
+                      <img
+                        src={item.foodImage}
+                        alt={item.name}
+                        className="w-full sm:w-24 h-32 sm:h-24 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-semibold text-sm sm:text-base">{item.name}</h3>
+                            <Badge variant="outline" className="mt-1 text-xs">
+                              {item.catName}
+                            </Badge>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onRemoveItem?.(item.foodId)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        {item.topics && item.topics.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {item.topics.map((topic) => (
+                              <Badge key={topic.otherId} variant="secondary" className="text-xs">
+                                {topic.otherName}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 rounded-full"
+                              onClick={() => handleQuantityChange(item.foodId, false)}
+                              disabled={item.quantity <= 1}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                            <span className="w-12 text-center font-semibold">
+                              {item.quantity}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 rounded-full"
+                              onClick={() => handleQuantityChange(item.foodId, true)}
+                              disabled={item.quantity >= 99}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
+                              {item.eachPrice.toLocaleString()} MMK each
+                            </p>
+                            <p className="text-base sm:text-lg font-bold text-primary">
+                              {(item.eachPrice * item.quantity).toLocaleString()} MMK
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              <Separator />
+
+              {/* Total and Checkout */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-base sm:text-lg">
+                  <span className="font-semibold">Total Amount</span>
+                  <span className="text-xl sm:text-2xl font-bold text-primary">
+                    {totalAmount.toLocaleString()} MMK
+                  </span>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    onProceedToOrder?.();
+                    onOpenChange(false);
+                  }}
+                  className="w-full gradient-primary text-lg py-6"
+                  disabled={cartItems.length === 0}
+                >
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  Proceed to Order
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default CartDialog;

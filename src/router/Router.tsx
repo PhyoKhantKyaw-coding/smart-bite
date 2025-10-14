@@ -15,6 +15,7 @@ import CategoryView from "@/modules/admin/CategoryView";
 import { useAuth } from "@/hooks/UseAuth";
 import React, { ReactNode } from "react";
 import ProfileView from "@/modules/admin/ProfileView";
+import Profile from "@/modules/user/Profile";
 
 // ✅ Define prop types properly
 interface ProtectedRouteProps {
@@ -62,7 +63,10 @@ const router = createBrowserRouter([
           <UserLayout />
         </ProtectedRoute>
       ),
-      children: [{ path: "", element: <HomeView /> }],
+      children: [
+        { path: "", element: <HomeView /> },
+        { path: "profile", element: <Profile /> },
+      ],
     },
     {
       path: "/admin",

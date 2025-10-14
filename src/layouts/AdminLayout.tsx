@@ -3,7 +3,6 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/UseAuth";
 import SidebarNav from "@/hooks/Sidebar";
-import Footer from "@/components/Footer";
 import Header from "@/hooks/Header";
 
 const AdminLayout = () => {
@@ -38,19 +37,35 @@ const AdminLayout = () => {
 
   return (
     <SidebarProvider>
-  <div className="min-h-screen flex flex-col w-full" style={{ background: darkMode ? '#18181b' : '#fff', color: darkMode ? '#fff' : '#000' }}>
-        {/* Header at the top */}
-  <Header isCollapsed={isCollapsed} darkMode={darkMode} setDarkMode={setDarkMode} />
-        {/* Sidebar and Outlet side by side */}
-        <div className="flex flex-1 w-full">
-          <div className="h-full" style={{ minWidth: isCollapsed ? '5rem' : '16rem', maxWidth: isCollapsed ? '5rem' : '16rem' }}>
-            <SidebarNav isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} autoSelectDashboard />
-          </div>
-          <main className="flex-1 flex flex-col">
-            <Outlet />
-          </main>
+      <div
+        className="min-h-screen w-full"
+        style={{
+          background: darkMode ? '#18181b' : '#fff',
+          color: darkMode ? '#fff' : '#000',
+          display: 'grid',
+          gridTemplateColumns: `${isCollapsed ? '5rem' : '16rem'} 1fr`,
+          gridTemplateRows: '4rem 1fr auto',
+          gridTemplateAreas: `
+            'sidebar header'
+            'sidebar main'
+            'sidebar footer'
+          `,
+          minHeight: '100vh',
+        }}
+      >
+        {/* Sidebar (area 1) */}
+        <div style={{ gridArea: 'sidebar', height: '100%', minHeight: 0 }}>
+          <SidebarNav isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} autoSelectDashboard />
         </div>
-        <Footer />
+        {/* Header (area 2) */}
+        <div style={{ gridArea: 'header', minWidth: 0 }}>
+          <Header isCollapsed={isCollapsed} darkMode={darkMode} setDarkMode={setDarkMode} />
+        </div>
+        {/* Main/body (area 3) */}
+        <main style={{ gridArea: 'main', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <Outlet />
+        </main>
+
       </div>
     </SidebarProvider>
   );

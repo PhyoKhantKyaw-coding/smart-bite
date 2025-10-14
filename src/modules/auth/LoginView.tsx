@@ -287,7 +287,17 @@ const LoginView = () => {
 
       {/* Auth Form Container */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-yellow-400">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-yellow-400 relative">
+          {/* Close button (X) --> back to Home */}
+          <button
+            aria-label="Close"
+            onClick={() => navigate('/')}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-600"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 011.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
           <div className="grid md:grid-cols-2">
             {/* Left Side - Branding */}
             <div className="hidden md:flex flex-col justify-center p-12 bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
