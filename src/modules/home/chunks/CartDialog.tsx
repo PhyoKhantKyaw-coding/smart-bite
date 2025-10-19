@@ -11,23 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Minus, Trash2, ShoppingCart, Package } from "lucide-react";
-
-interface OtherTopicModel {
-  otherId: string;
-  otherName: string;
-}
-
-interface GetCartDTO {
-  foodId: string;
-  name: string;
-  eachPrice: number;
-  cookingTime: number;
-  foodImage: string;
-  foodDescription: string;
-  catName: string;
-  quantity: number;
-  topics?: OtherTopicModel[];
-}
+import type { GetCartDTO } from "@/api/user/types";
 
 interface CartDialogProps {
   open: boolean;
@@ -48,7 +32,7 @@ const CartDialog: React.FC<CartDialogProps> = ({
 }) => {
   const handleQuantityChange = (foodId: string, increment: boolean) => {
     const item = cartItems.find((i) => i.foodId === foodId);
-    if (!item) return;
+    if (!item || !item.quantity) return;
 
     const newQuantity = increment
       ? Math.min(item.quantity + 1, 99)
@@ -58,7 +42,7 @@ const CartDialog: React.FC<CartDialogProps> = ({
   };
 
   const calculateTotal = () => {
-    return cartItems.reduce((total, item) => total + item.eachPrice * item.quantity, 0);
+    return cartItems.reduce((total, item) => total + (item.eachPrice || 0) * (item.quantity || 0), 0);
   };
 
   const totalAmount = calculateTotal();
@@ -91,7 +75,7 @@ const CartDialog: React.FC<CartDialogProps> = ({
                   <Card key={item.foodId} className="overflow-hidden hover:shadow-md transition-shadow">
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4">
                       <img
-                        src={item.foodImage}
+                        src={item.foodImage ? `https://localhost:7112/api/${item.foodImage}` : '/placeholder-food.jpg'}
                         alt={item.name}
                         className="w-full sm:w-24 h-32 sm:h-24 object-cover rounded-lg"
                       />
@@ -106,7 +90,7 @@ const CartDialog: React.FC<CartDialogProps> = ({
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => onRemoveItem?.(item.foodId)}
+                            onClick={() => item.foodId && onRemoveItem?.(item.foodId)}
                             className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -115,9 +99,9 @@ const CartDialog: React.FC<CartDialogProps> = ({
 
                         {item.topics && item.topics.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-2">
-                            {item.topics.map((topic) => (
-                              <Badge key={topic.otherId} variant="secondary" className="text-xs">
-                                {topic.otherName}
+                            {item.topics.map((topic, idx) => (
+                              <Badge key={topic.topicId || idx} variant="secondary" className="text-xs">
+                                {topic.topicName}
                               </Badge>
                             ))}
                           </div>
@@ -129,30 +113,30 @@ const CartDialog: React.FC<CartDialogProps> = ({
                               variant="outline"
                               size="icon"
                               className="h-8 w-8 rounded-full"
-                              onClick={() => handleQuantityChange(item.foodId, false)}
-                              disabled={item.quantity <= 1}
+                              onClick={() => item.foodId && handleQuantityChange(item.foodId, false)}
+                              disabled={(item.quantity || 0) <= 1}
                             >
                               <Minus className="w-3 h-3" />
                             </Button>
                             <span className="w-12 text-center font-semibold">
-                              {item.quantity}
+                              {item.quantity || 0}
                             </span>
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-8 w-8 rounded-full"
-                              onClick={() => handleQuantityChange(item.foodId, true)}
-                              disabled={item.quantity >= 99}
+                              onClick={() => item.foodId && handleQuantityChange(item.foodId, true)}
+                              disabled={(item.quantity || 0) >= 99}
                             >
                               <Plus className="w-3 h-3" />
                             </Button>
                           </div>
                           <div className="text-left sm:text-right">
                             <p className="text-xs sm:text-sm text-muted-foreground">
-                              {item.eachPrice.toLocaleString()} MMK each
+                              {(item.eachPrice || 0).toLocaleString()} MMK each
                             </p>
                             <p className="text-base sm:text-lg font-bold text-primary">
-                              {(item.eachPrice * item.quantity).toLocaleString()} MMK
+                              {((item.eachPrice || 0) * (item.quantity || 0)).toLocaleString()} MMK
                             </p>
                           </div>
                         </div>

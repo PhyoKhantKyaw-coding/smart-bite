@@ -10,16 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Clock, Trash2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
-
-interface GetFavoriteDTO {
-  foodId: string;
-  name: string;
-  eachPrice: number;
-  cookingTime: number;
-  foodImage: string;
-  foodDescription: string;
-  catName: string;
-}
+import type { GetFavoriteDTO } from "@/api/user/types";
 
 interface FavoriteDialogProps {
   open: boolean;
@@ -72,7 +63,7 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
                 >
                   <div className="relative">
                     <img
-                      src={item.foodImage}
+                      src={item.foodImage ? `https://localhost:7112/api/${item.foodImage}` : '/placeholder-food.jpg'}
                       alt={item.name}
                       className="w-full h-40 sm:h-48 object-cover"
                     />
@@ -83,7 +74,7 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
                       variant="ghost"
                       size="icon"
                       className="absolute top-2 right-2 bg-white/90 hover:bg-white text-red-500 h-8 w-8 sm:h-10 sm:w-10"
-                      onClick={() => onRemoveFavorite?.(item.foodId)}
+                      onClick={() => item.foodId && onRemoveFavorite?.(item.foodId)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -95,7 +86,7 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
                     </p>
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-lg sm:text-xl font-bold text-primary">
-                        {item.eachPrice.toLocaleString()} MMK
+                        {(item.eachPrice || 0).toLocaleString()} MMK
                       </span>
                       <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
                         <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
@@ -104,7 +95,7 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
                     </div>
                     <Button
                       className="w-full gradient-primary text-sm sm:text-base"
-                      onClick={() => handleAddToCart(item.foodId, item.name)}
+                      onClick={() => item.foodId && handleAddToCart(item.foodId, item.name || '')}
                     >
                       <ShoppingCart className="w-4 h-4 mr-2" />
                       Add to Cart

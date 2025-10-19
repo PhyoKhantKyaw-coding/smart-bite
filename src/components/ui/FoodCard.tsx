@@ -55,7 +55,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite
     >
       <div className="relative aspect-square overflow-hidden">
         <img
-          src={food.foodImage}
+          src={food.foodImage ? `https://localhost:7112/api/${food.foodImage}` : '/placeholder-food.jpg'}
           alt={food.name}
           className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
         />

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -42,7 +43,7 @@ interface SidebarNavProps {
   autoSelectDashboard?: boolean;
 }
 
-const SidebarNav: React.FC<SidebarNavProps> = ({ isCollapsed, setIsCollapsed, autoSelectDashboard }) => {
+const SidebarNav: React.FC<SidebarNavProps> = ({ isCollapsed, setIsCollapsed }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,13 +79,25 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ isCollapsed, setIsCollapsed, au
 
   const items = user?.role === "admin" ? adminItems : deliveryItems;
 
-  // If autoSelectDashboard is true, force dashboard item active for admin/delivery
+  // Check if a menu item is active based on current location
   const isActive = (path: string) => {
-    if (autoSelectDashboard) {
-      if (user?.role === "admin" && path === "/admin/dashboard") return true;
-      if (user?.role === "delivery" && path === "/delivery/dashboard") return true;
+    // Exact match for the current path
+    if (location.pathname === path) return true;
+    
+    // Special handling for dashboard routes - only activate if exact match or root
+    if (path.includes('dashboard') || path === '/admin' || path === '/delivery') {
+      return location.pathname === path;
     }
-    return location.pathname === path;
+    
+    // Don't show dashboard as active when on other pages
+    if (location.pathname !== '/admin' && location.pathname !== '/admin/dashboard' && path === '/admin/dashboard') {
+      return false;
+    }
+    if (location.pathname !== '/delivery' && location.pathname !== '/delivery/dashboard' && path === '/delivery/dashboard') {
+      return false;
+    }
+    
+    return false;
   };
 
   const handleLogout = () => {
@@ -162,37 +175,25 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ isCollapsed, setIsCollapsed, au
                       style={
                         isItemActive
                           ? {
-                              background: isDark ? '#3b82f6' : '#3b82f6',
-                              color: '#fff',
-                              boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.2)',
+                              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                              color: '#000',
+                              boxShadow: '0 4px 6px -1px rgba(251, 191, 36, 0.3)',
                               fontWeight: '500'
                             }
                           : {
                               color: isDark ? '#d4d4d8' : '#374151',
                             }
                       }
-                      onMouseEnter={(e) => {
-                        if (!isItemActive) {
-                          e.currentTarget.style.background = isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)';
-                          e.currentTarget.style.color = isDark ? '#60a5fa' : '#3b82f6';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isItemActive) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = isDark ? '#d4d4d8' : '#374151';
-                        }
-                      }}
                     >
-                      <a 
-                        href={item.url} 
+                      <Link 
+                        to={item.url} 
                         className="flex items-center gap-3 w-full" 
                         title={isCollapsed ? item.title : ''}
-                        style={{ color: 'inherit' }}
+                        style={{ color: 'inherit', textDecoration: 'none' }}
                       >
-                        <item.icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} ${isItemActive ? '' : 'group-hover:scale-110 transition-transform'}`} />
-                        {!isCollapsed && <span className="text-sm">{item.title}</span>}
-                      </a>
+                        <item.icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`} style={{ color: 'inherit' }} />
+                        {!isCollapsed && <span className="text-sm" style={{ color: 'inherit' }}>{item.title}</span>}
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

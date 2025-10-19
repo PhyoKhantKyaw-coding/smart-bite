@@ -5,7 +5,7 @@ import DeliveryLayout from "@/layouts/DeliveryLayout";
 import HomeView from "@/modules/home/HomeView";
 import LoginView from "@/modules/auth/LoginView";
 import AdminView from "@/modules/admin/AdminView";
-import FoodView from "@/modules/admin/FoodView";
+import FoodManagementView from "@/modules/admin/food-management/FoodManagementView";
 import OrderView from "@/modules/admin/OrderView";
 import StoreView from "@/modules/admin/StoreView";
 import DeliveryView from "@/modules/admin/DeliveryView";
@@ -78,7 +78,7 @@ const router = createBrowserRouter([
       children: [
         { path: "dashboard", element: <AdminView /> },
         { path: "", element: <AdminView /> }, 
-          { path: "foods", element: <FoodView /> },
+          { path: "foods", element: <FoodManagementView /> },
           { path: "orders", element: <OrderView /> },
           { path: "stores", element: <StoreView /> },
           { path: "deliveries", element: <DeliveryView /> },

@@ -2,7 +2,7 @@ import axios from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
 // Update this URL to your backend API
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7112/api/';
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7112/';
 
 // Add a request interceptor
 axios.interceptors.request.use(

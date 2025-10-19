@@ -83,8 +83,13 @@ const Header: React.FC<HeaderProps> = ({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar>
-                  <AvatarImage />
-                  <AvatarFallback style={{ background: "#3b82f6", color: "#fff" }}>{user.email.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarImage 
+                    src={user.userProfile ? `https://localhost:7112/api/images/${user.userProfile}` : undefined}
+                    alt={user.userName || user.email}
+                  />
+                  <AvatarFallback style={{ background: "#3b82f6", color: "#fff" }}>
+                    {(user.userName || user.email).charAt(0).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -192,8 +197,13 @@ const Header: React.FC<HeaderProps> = ({
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                         <Avatar>
-                          <AvatarImage />
-                          <AvatarFallback style={{ background: "#f97316", color: "#fff" }}>{user.email.charAt(0).toUpperCase()}</AvatarFallback>
+                          <AvatarImage 
+                            src={user.userProfile ? `https://localhost:7112/api/images/${user.userProfile}` : undefined}
+                            alt={user.userName || user.email}
+                          />
+                          <AvatarFallback style={{ background: "#f97316", color: "#fff" }}>
+                            {(user.userName || user.email).charAt(0).toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
@@ -316,13 +326,16 @@ const Header: React.FC<HeaderProps> = ({
                 {/* Profile Section */}
                 <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg mb-2">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage />
+                    <AvatarImage 
+                      src={user.userProfile ? `https://localhost:7112/api/images/${user.userProfile}` : undefined}
+                      alt={user.userName || user.email}
+                    />
                     <AvatarFallback style={{ background: "#f97316", color: "#fff" }}>
-                      {user.email.charAt(0).toUpperCase()}
+                      {(user.userName || user.email).charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{user.email}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">{user.userName || user.email}</p>
                     <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                   </div>
                 </div>

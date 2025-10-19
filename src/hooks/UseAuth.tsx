@@ -11,6 +11,7 @@ interface AuthUser {
   userName: string;
   role: "user" | "admin" | "delivery";
   token: string;
+  userProfile?: string;
 }
 
 // Decode JWT token
@@ -40,7 +41,7 @@ export function useAuth() {
   const user = useSelector((state: RootState) => state.auth.user);
   const navigate = useNavigate();
 
-  const setAuthUser = (token: string, userName?: string, roleName?: string) => {
+  const setAuthUser = (token: string, userName?: string, roleName?: string, userProfile?: string) => {
     const decoded = decodeToken(token);
     if (!decoded) {
       console.error("Invalid token");
@@ -52,7 +53,8 @@ export function useAuth() {
       email: "",
       userName: userName || decoded.userName,
       role: (roleName || decoded.role).toLowerCase() as "user" | "admin" | "delivery",
-      token: token
+      token: token,
+      userProfile: userProfile
     };
 
     dispatch(setUser(userData));

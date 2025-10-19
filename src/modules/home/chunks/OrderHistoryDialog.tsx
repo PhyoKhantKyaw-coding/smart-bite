@@ -257,7 +257,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                               className="flex gap-2 sm:gap-3 p-2 bg-gray-50 rounded-lg"
                             >
                               <img
-                                src={item.foodImage}
+                                src={item.foodImage ? `https://localhost:7112/api/${item.foodImage}` : '/placeholder-food.jpg'}
                                 alt={item.name}
                                 className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded flex-shrink-0"
                               />

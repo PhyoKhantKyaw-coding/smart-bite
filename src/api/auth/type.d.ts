@@ -32,6 +32,7 @@ type LoginResponseDTO = {
 	token?: string;
 	userName?: string;
 	roleName?: string;
+	userProfile?: string;
 };
 
 type DecodedToken = {

@@ -9,20 +9,21 @@ import { useAuth } from "@/hooks/UseAuth";
 
 interface FoodCardProps {
   food: {
-    foodId: string;
-    name: string;
-    eachPrice: number;
-    foodImage: string;
-    foodDescription: string;
-    cookingTime: number;
-    catName: string;
+    foodId?: string;
+    name?: string;
+    eachPrice?: number;
+    foodImage?: string;
+    foodDescription?: string;
+    cookingTime?: number;
+    catName?: string;
   };
   onAddToCart?: () => void;
   onToggleFavorite?: () => void;
   isFavorite?: boolean;
+  onClick?: () => void;
 }
 
-const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite, isFavorite = false }) => {
+const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite, isFavorite = false, onClick }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
@@ -34,7 +35,6 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite
       return;
     }
     onAddToCart?.();
-    toast.success("Added to cart!");
   };
 
   const handleToggleFavorite = () => {
@@ -44,7 +44,6 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite
       return;
     }
     onToggleFavorite?.();
-    toast.success(isFavorite ? "Removed from favorites" : "Added to favorites!");
   };
 
   return (
@@ -52,10 +51,11 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite
       className="overflow-hidden transition-all duration-300 cursor-pointer group hover:shadow-hover"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={onClick}
     >
       <div className="relative aspect-square overflow-hidden">
         <img
-          src={food.foodImage}
+          src={food.foodImage ? `https://localhost:7112/api/${food.foodImage}` : '/placeholder-food.jpg'}
           alt={food.name}
           className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
         />
@@ -81,7 +81,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite
         <h3 className="font-semibold text-lg mb-1 line-clamp-1">{food.name}</h3>
         <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{food.foodDescription}</p>
         <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-primary">{food.eachPrice.toLocaleString()} MMK</span>
+          <span className="text-lg font-bold text-primary">{food.eachPrice?.toLocaleString()} MMK</span>
           <div className="flex items-center text-sm text-muted-foreground">
             <Clock className="w-4 h-4 mr-1" />
             {food.cookingTime} min

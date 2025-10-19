@@ -114,7 +114,7 @@ const Voucher: React.FC<VoucherProps> = ({ voucher }) => {
           {voucher.cartDTOs.map((item, index) => (
             <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
               <img
-                src={item.foodImage}
+                src={item.foodImage ? `https://localhost:7112/api/${item.foodImage}` : '/placeholder-food.jpg'}
                 alt={item.name}
                 className="w-20 h-20 object-cover rounded-lg"
               />
