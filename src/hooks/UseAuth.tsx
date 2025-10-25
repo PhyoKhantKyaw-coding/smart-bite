@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { setUser } from "@/store/authSlice";
 import { useNavigate } from "react-router-dom";
+import { getUserById } from "@/api/user";
 
 interface AuthUser {
   userId: string;
@@ -12,6 +13,13 @@ interface AuthUser {
   role: "user" | "admin" | "delivery";
   token: string;
   userProfile?: string;
+}
+
+interface DecodedToken {
+  userId: string;
+  role: string;
+  userName: string;
+  exp: number;
 }
 
 // Decode JWT token
@@ -41,7 +49,7 @@ export function useAuth() {
   const user = useSelector((state: RootState) => state.auth.user);
   const navigate = useNavigate();
 
-  const setAuthUser = (token: string, userName?: string, roleName?: string, userProfile?: string) => {
+  const setAuthUser = async (token: string, userName?: string, roleName?: string, userProfile?: string) => {
     const decoded = decodeToken(token);
     if (!decoded) {
       console.error("Invalid token");
@@ -57,9 +65,38 @@ export function useAuth() {
       userProfile: userProfile
     };
 
-    dispatch(setUser(userData));
+
+    // Fetch user profile data from API
+    try {
+      const response = await getUserById(decoded.userId);
+      // API returns status as number (0 = success), but type definition says string
+      
+        userData.userProfile = response.data.userProfile;
+        userData.userName = response.data.userName || userData.userName;
+        userData.email = response.data.userEmail || userData.email;
+ 
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+    }
+
+    // Save to localStorage and sessionStorage
     localStorage.setItem("authToken", token);
-    localStorage.setItem("user", JSON.stringify(userData));
+    
+    // Create session data object without token for security
+    const sessionData = {
+      userId: userData.userId,
+      email: userData.email,
+      userName: userData.userName,
+      role: userData.role,
+      userProfile: userData.userProfile
+    };
+    
+    sessionStorage.setItem("userProfile", JSON.stringify(sessionData));
+    
+
+    // Dispatch to Redux store
+    dispatch(setUser(userData));
+
 
     // Redirect based on role
     if (userData.role === "admin") navigate("/admin");
@@ -72,7 +109,7 @@ export function useAuth() {
   const logout = (): void => {
     dispatch(setUser(null));
     localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("userProfile");
     navigate("/");
   };
 
@@ -90,18 +127,66 @@ export function useAuth() {
 
   React.useEffect(() => {
     const token = localStorage.getItem("authToken");
-    const stored = localStorage.getItem("user");
+    const stored = sessionStorage.getItem("userProfile");
     
     if (token && stored) {
+      try {
+        const decoded = decodeToken(token);
+        if (decoded) {
+          const currentTime = Date.now() / 1000;
+          if (decoded.exp > currentTime) {
+            const sessionData = JSON.parse(stored);
+            // Restore user with token included
+            const userData = {
+              ...sessionData,
+              token: token
+            };
+            dispatch(setUser(userData));
+          } else {
+            // Token expired, clear everything
+            localStorage.removeItem("authToken");
+            sessionStorage.removeItem("userProfile");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to restore session:", error);
+        localStorage.removeItem("authToken");
+        sessionStorage.removeItem("userProfile");
+      }
+    } else if (token && !stored) {
+      // Token exists but no session data - re-fetch user data
       const decoded = decodeToken(token);
       if (decoded) {
         const currentTime = Date.now() / 1000;
         if (decoded.exp > currentTime) {
-          dispatch(setUser(JSON.parse(stored)));
+          // Fetch user data from API
+          getUserById(decoded.userId).then((response) => {
+            if (response.status === 'Success' && response.data) {
+              const userData = {
+                userId: decoded.userId,
+                email: response.data.userEmail || "",
+                userName: response.data.userName || decoded.userName,
+                role: decoded.role.toLowerCase() as "user" | "admin" | "delivery",
+                token: token,
+                userProfile: response.data.userProfile
+              };
+              
+              const sessionData = {
+                userId: userData.userId,
+                email: userData.email,
+                userName: userData.userName,
+                role: userData.role,
+                userProfile: userData.userProfile
+              };
+              
+              sessionStorage.setItem("userProfile", JSON.stringify(sessionData));
+              dispatch(setUser(userData));
+            }
+          }).catch((error) => {
+            console.error("Failed to fetch user data:", error);
+          });
         } else {
-          // Token expired, clear everything
           localStorage.removeItem("authToken");
-          localStorage.removeItem("user");
         }
       }
     }

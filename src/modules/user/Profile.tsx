@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/UseAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,11 @@ import {
   Save, 
   X, 
   Edit,
-  Shield
+  Shield,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getUserById } from '@/api/user';
 
 // User DTO interface based on C# GetUserDTO
 interface UserProfile {
@@ -38,26 +40,10 @@ interface UserProfile {
 const Profile: React.FC = () => {
   const { user } = useAuth();
   
-  // Get additional user data from localStorage if available
-  const storedUser = localStorage.getItem('user');
-  const userData = storedUser ? JSON.parse(storedUser) : null;
-  
-  // Mock user profile data - replace with actual API call
-  const [profile, setProfile] = useState<UserProfile>({
-    userId: userData?.userId || '550e8400-e29b-41d4-a716-446655440000',
-    roleName: user?.role || 'User',
-    userName: userData?.userName || user?.email?.split('@')[0] || 'User',
-    userEmail: user?.email || 'user@example.com',
-    userProfile: '',
-    userPhNo: '+95 9 123 456 789',
-    latitude: 16.8661,
-    longitude: 96.1951,
-    deviceToken: 'device_token_123',
-    googleTokenId: '',
-  });
-
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
+  const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -65,9 +51,36 @@ const Profile: React.FC = () => {
     confirmPassword: '',
   });
 
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.userId) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await getUserById(user.userId);
+        if (response.status === 'Success' && response.data) {
+          setProfile(response.data);
+          setEditedProfile(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        toast.error('Failed to load profile data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user?.userId]);
+
   const handleEdit = () => {
-    setIsEditing(true);
-    setEditedProfile(profile);
+    if (profile) {
+      setIsEditing(true);
+      setEditedProfile(profile);
+    }
   };
 
   const handleCancel = () => {
@@ -81,7 +94,50 @@ const Profile: React.FC = () => {
     });
   };
 
+  // Helper function to get profile image URL
+  const getProfileImageUrl = (profilePath?: string) => {
+    if (!profilePath) return undefined;
+    
+    if (profilePath.startsWith('http://') || profilePath.startsWith('https://')) {
+      return profilePath;
+    }
+    
+    return `https://localhost:7112/api/${profilePath}`;
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-4 md:p-6 max-w-4xl">
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-12 h-12 animate-spin text-orange-500 mb-4" />
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no profile
+  if (!profile) {
+    return (
+      <div className="container mx-auto p-4 md:p-6 max-w-4xl">
+        <div className="flex flex-col items-center justify-center py-20">
+          <User className="w-16 h-16 text-gray-400 mb-4" />
+          <p className="text-gray-600">Failed to load profile data</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 gradient-primary"
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const handleSave = async () => {
+    if (!editedProfile) return;
+    
     try {
       // TODO: Replace with actual API call
       // await updateUserProfile(editedProfile);
@@ -124,6 +180,8 @@ const Profile: React.FC = () => {
   };
 
   const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editedProfile) return;
+    
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -139,6 +197,8 @@ const Profile: React.FC = () => {
   };
 
   const getCurrentLocation = () => {
+    if (!editedProfile) return;
+    
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -183,7 +243,7 @@ const Profile: React.FC = () => {
             {/* Avatar Section */}
             <div className="relative">
               <Avatar className="w-32 h-32 border-4 border-orange-100">
-                <AvatarImage src={isEditing ? editedProfile.userProfile : profile.userProfile} />
+                <AvatarImage src={isEditing && editedProfile ? getProfileImageUrl(editedProfile.userProfile) : getProfileImageUrl(profile.userProfile)} />
                 <AvatarFallback className="text-4xl" style={{ background: "#f97316", color: "#fff" }}>
                   {profile.userName?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
@@ -238,8 +298,8 @@ const Profile: React.FC = () => {
             </label>
             {isEditing ? (
               <Input
-                value={editedProfile.userName || ''}
-                onChange={(e) => setEditedProfile({ ...editedProfile, userName: e.target.value })}
+                value={editedProfile?.userName || ''}
+                onChange={(e) => editedProfile && setEditedProfile({ ...editedProfile, userName: e.target.value })}
                 placeholder="Enter your full name"
               />
             ) : (
@@ -268,8 +328,8 @@ const Profile: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-500" />
                 <Input
-                  value={editedProfile.userPhNo || ''}
-                  onChange={(e) => setEditedProfile({ ...editedProfile, userPhNo: e.target.value })}
+                  value={editedProfile?.userPhNo || ''}
+                  onChange={(e) => editedProfile && setEditedProfile({ ...editedProfile, userPhNo: e.target.value })}
                   placeholder="+95 9 123 456 789"
                 />
               </div>
@@ -293,16 +353,16 @@ const Profile: React.FC = () => {
                   <Input
                     type="number"
                     step="any"
-                    value={editedProfile.latitude || ''}
-                    onChange={(e) => setEditedProfile({ ...editedProfile, latitude: parseFloat(e.target.value) })}
+                    value={editedProfile?.latitude || ''}
+                    onChange={(e) => editedProfile && setEditedProfile({ ...editedProfile, latitude: parseFloat(e.target.value) })}
                     placeholder="Latitude"
                     className="flex-1"
                   />
                   <Input
                     type="number"
                     step="any"
-                    value={editedProfile.longitude || ''}
-                    onChange={(e) => setEditedProfile({ ...editedProfile, longitude: parseFloat(e.target.value) })}
+                    value={editedProfile?.longitude || ''}
+                    onChange={(e) => editedProfile && setEditedProfile({ ...editedProfile, longitude: parseFloat(e.target.value) })}
                     placeholder="Longitude"
                     className="flex-1"
                   />

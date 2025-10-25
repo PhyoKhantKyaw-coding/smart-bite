@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { UtensilsCrossed, Sun, Moon, Bell, LogOut, ChevronDown, ShoppingCart, Heart, Package, User } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UtensilsCrossed, Sun, Moon, Bell, LogOut, ChevronDown, ShoppingCart, Heart, Package } from "lucide-react";
+import { Avatar,  AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "./UseAuth";
-import React, { useState } from "react";
+import React, { useState} from "react";
 import { Button } from "@/components/ui/button";
+import ProfileDialog from "@/components/ProfileDialog";
+import { AvatarFallback } from "@radix-ui/react-avatar";
 
 interface HeaderProps {
   isCollapsed?: boolean;
@@ -27,10 +28,16 @@ const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+
+
+const sessionData = sessionStorage.getItem("userProfile");
+const userProfileData = sessionData ? JSON.parse(sessionData) : null;
 
   const handleLogout = () => {
     logout();
     navigate("/");
+    setProfileDialogOpen(false);
   };
 
   // Determine current dark state: prefer parent prop, otherwise read body class/localStorage
@@ -61,6 +68,24 @@ const Header: React.FC<HeaderProps> = ({
     setActiveDropdown(activeDropdown === name ? null : name);
   };
 
+  // Helper function to get profile image URL
+  const getProfileImageUrl = (profilePath?: string) => {
+    if (!profilePath || profilePath === 'string') return undefined;
+    
+    // If it's already a full URL, return as is
+    if (profilePath.startsWith('http://') || profilePath.startsWith('https://')) {
+      return profilePath;
+    }
+    
+    // If it starts with 'images/', use it directly
+    if (profilePath.startsWith('images/')) {
+      return `https://localhost:7112/api/${profilePath}`;
+    }
+    
+    // Otherwise, assume it's just a filename and prepend the images path
+    return `https://localhost:7112/api/images/${profilePath}`;
+  };
+
   const isGuest = !user;
   const isUser = user?.role === "user";
   const isAdmin = user?.role === "admin";
@@ -70,42 +95,42 @@ const Header: React.FC<HeaderProps> = ({
   // Admin/Delivery header
   if (isAdminOrDelivery) {
     return (
-      <header className={"sticky top-0 z-50 border-b w-full flex items-center justify-between px-6 h-16 " + (isDark ? 'bg-[#18181b] text-white border-gray-700' : 'bg-white text-black border-gray-200')}>
-        <div className="flex items-center gap-4">
-          <span className="text-xl font-bold">{isAdmin ? "Admin Dashboard" : "Delivery Dashboard"}</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={handleToggleDark} aria-label="Toggle dark mode">
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
-          <Button variant="ghost" size="icon"><Bell className="w-5 h-5" /></Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar>
-                  <AvatarImage 
-                    src={user.userProfile ? `https://localhost:7112/api/images/${user.userProfile}` : undefined}
-                    alt={user.userName || user.email}
-                  />
-                  <AvatarFallback style={{ background: "#3b82f6", color: "#fff" }}>
-                    {(user.userName || user.email).charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.email}</p>
-                  <p className="text-xs">{user.role}</p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}><LogOut className="mr-2 h-4 w-4" />Logout</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
+      <>
+        <header className={"sticky top-0 z-50 border-b w-full flex items-center justify-between px-6 h-16 " + (isDark ? 'bg-[#18181b] text-white border-gray-700' : 'bg-white text-black border-gray-200')}>
+          <div className="flex items-center gap-4">
+            <span className="text-xl font-bold">{isAdmin ? "Admin Dashboard" : "Delivery Dashboard"}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={handleToggleDark} aria-label="Toggle dark mode">
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
+            <Button variant="ghost" size="icon"><Bell className="w-5 h-5" /></Button>
+            <Button
+              variant="ghost"
+              className="relative h-10 w-10 rounded-full p-0"
+              onClick={() => setProfileDialogOpen(true)}
+            >
+              <Avatar>
+                <AvatarImage 
+                  src={getProfileImageUrl(userProfileData?.userProfile || user.userProfile)}
+                  alt={userProfileData?.userName || user.userName || user.email}
+                />
+                <AvatarFallback style={{ background: "#3b82f6", color: "#fff" }}>
+                  {(userProfileData?.userName || user.userName || user.email || 'U').charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </div>
+        </header>
+        
+        {/* Profile Dialog */}
+        <ProfileDialog
+          open={profileDialogOpen}
+          onOpenChange={setProfileDialogOpen}
+          user={userProfileData || user}
+          onLogout={handleLogout}
+        />
+      </>
     );
   }
 
@@ -193,51 +218,21 @@ const Header: React.FC<HeaderProps> = ({
                   <button type="button" className="hover:text-primary" onClick={onOrderHistoryClick}>
                     <Package className="w-5 h-5" />
                   </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                        <Avatar>
-                          <AvatarImage 
-                            src={user.userProfile ? `https://localhost:7112/api/images/${user.userProfile}` : undefined}
-                            alt={user.userName || user.email}
-                          />
-                          <AvatarFallback style={{ background: "#f97316", color: "#fff" }}>
-                            {(user.userName || user.email).charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                      <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{user.email}</p>
-                          <p className="text-xs text-gray-500">{user.role}</p>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate("/user/profile")}>
-                        <User className="mr-2 h-4 w-4" />
-                        Profile
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={onOrderHistoryClick}>
-                        <Package className="mr-2 h-4 w-4" />
-                        Order History
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={onFavoriteClick}>
-                        <Heart className="mr-2 h-4 w-4" />
-                        Favorites
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={onCartClick}>
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Cart
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Logout
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full p-0"
+                    onClick={() => setProfileDialogOpen(true)}
+                  >
+                    <Avatar>
+                      <AvatarImage 
+                        src={getProfileImageUrl(userProfileData?.userProfile || user.userProfile)}
+                        alt={userProfileData?.userName || user.userName || user.email}
+                      />
+                      {/* <AvatarFallback style={{ background: "#f97316", color: "#fff" }}>
+                        {(user.userName || user.email).charAt(0).toUpperCase()}
+                      </AvatarFallback> */}
+                    </Avatar>
+                  </Button>
                 </>
               )}
             </>
@@ -325,30 +320,30 @@ const Header: React.FC<HeaderProps> = ({
               <div className="space-y-2 mt-2">
                 {/* Profile Section */}
                 <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg mb-2">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage 
-                      src={user.userProfile ? `https://localhost:7112/api/images/${user.userProfile}` : undefined}
-                      alt={user.userName || user.email}
-                    />
-                    <AvatarFallback style={{ background: "#f97316", color: "#fff" }}>
-                      {(user.userName || user.email).charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{user.userName || user.email}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                  </div>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setProfileDialogOpen(true);
+                    }}
+                    className="flex items-center gap-3 flex-1"
+                  >
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage 
+                        src={getProfileImageUrl(userProfileData?.userProfile || user.userProfile)}
+                        alt={userProfileData?.userName || user.userName || user.email}
+                      />
+                      {/* <AvatarFallback style={{ background: "#f97316", color: "#fff" }}>
+                        {(user.userName || user.email).charAt(0).toUpperCase()}
+                      </AvatarFallback> */}
+                    </Avatar>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{userProfileData?.userName || user.userName || user.email}</p>
+                      <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                    </div>
+                  </button>
                 </div>
 
                 {/* Menu Items */}
-                <button 
-                  type="button" 
-                  onClick={() => { navigate("/user/profile"); setMobileMenuOpen(false); }}
-                  className="w-full py-3 px-4 text-left hover:bg-gray-100 rounded-md transition-colors flex items-center gap-3"
-                >
-                  <User className="w-5 h-5 text-orange-500" />
-                  <span>Profile</span>
-                </button>
                 <button 
                   type="button" 
                   onClick={() => { setMobileMenuOpen(false); onCartClick?.(); }}
@@ -388,6 +383,16 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </nav>
         </div>
+      )}
+      
+      {/* Profile Dialog for Users */}
+      {isUser && (
+        <ProfileDialog
+          open={profileDialogOpen}
+          onOpenChange={setProfileDialogOpen}
+          user={userProfileData || user}
+          onLogout={handleLogout}
+        />
       )}
     </header>
   );

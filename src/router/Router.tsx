@@ -6,10 +6,10 @@ import HomeView from "@/modules/home/HomeView";
 import LoginView from "@/modules/auth/LoginView";
 import AdminView from "@/modules/admin/AdminView";
 import FoodManagementView from "@/modules/admin/food-management/FoodManagementView";
+import UserManagementView from "@/modules/admin/user-management/UserView";
 
 import { useAuth } from "@/hooks/UseAuth";
 import React, { ReactNode } from "react";
-import Profile from "@/modules/user/Profile";
 import StoreManagementView from "@/modules/admin/store-management/StoreManagementView";
 
 // ✅ Define prop types properly
@@ -60,7 +60,6 @@ const router = createBrowserRouter([
       ),
       children: [
         { path: "", element: <HomeView /> },
-        { path: "profile", element: <Profile /> },
       ],
     },
     {
@@ -74,7 +73,8 @@ const router = createBrowserRouter([
         { path: "dashboard", element: <AdminView /> },
         { path: "", element: <AdminView /> }, 
         { path: "foods", element: <FoodManagementView /> },
-        {path:"stores",element:<StoreManagementView/>}
+        { path: "stores", element: <StoreManagementView /> },
+        { path: "users", element: <UserManagementView /> }
       ],
     },
     {

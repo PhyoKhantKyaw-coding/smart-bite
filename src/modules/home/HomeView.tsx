@@ -33,12 +33,12 @@ const Home = () => {
     setLoadingFoods(true);
     try {
       const response = await getAllFoods({ page: 1, pageSize: 100 });
-      console.log('Foods API Response:', response);
+
       
       if (response && response.data) {
         // Check if data is an array or needs to be extracted
         const foodsData = Array.isArray(response.data) ? response.data : [];
-        console.log('Foods Data:', foodsData);
+
         setFoods(foodsData);
       } else {
         console.warn('No foods data in response');
@@ -55,11 +55,11 @@ const Home = () => {
     setLoadingCategories(true);
     try {
       const response = await getAllCategories();
-      console.log('Categories API Response:', response);
+
       
       if (response && response.data) {
         const categoriesData = Array.isArray(response.data) ? response.data : [];
-        console.log('Categories Data:', categoriesData);
+
         setCategories(categoriesData);
       } else {
         console.warn('No categories data in response');
@@ -75,13 +75,11 @@ const Home = () => {
   const fetchCart = useCallback(async () => {
     // Only fetch if user is logged in with 'user' role
     if (!user || user.role !== 'user') {
-      console.log('Skipping cart fetch - user not logged in or not a user role');
-      return;
+  return;
     }
     
     try {
       const response = await getCart();
-      console.log('Cart API Response:', response);
       
       if (response && response.data) {
         const cartData = Array.isArray(response.data) ? response.data : [];
@@ -95,13 +93,11 @@ const Home = () => {
   const fetchFavorites = useCallback(async () => {
     // Only fetch if user is logged in with 'user' role
     if (!user || user.role !== 'user') {
-      console.log('Skipping favorites fetch - user not logged in or not a user role');
-      return;
+ return;
     }
     
     try {
       const response = await getFavorites();
-      console.log('Favorites API Response:', response);
       
       if (response && response.data) {
         const favoritesData = Array.isArray(response.data) ? response.data : [];
