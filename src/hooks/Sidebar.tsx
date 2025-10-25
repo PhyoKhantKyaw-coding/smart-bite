@@ -16,10 +16,7 @@ import {
   ShoppingBag,
   Store,
   Truck,
-  MapPin,
   Users,
-  Tag,
-  User,
   LogOut,
   PackageCheck,
   ClipboardList,
@@ -64,17 +61,13 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ isCollapsed, setIsCollapsed }) 
     { title: "Order Management", url: "/admin/orders", icon: ShoppingBag },
     { title: "Store Management", url: "/admin/stores", icon: Store },
     { title: "Delivery Management", url: "/admin/deliveries", icon: Truck },
-    { title: "Town Management", url: "/admin/towns", icon: MapPin },
     { title: "User Management", url: "/admin/users", icon: Users },
-    { title: "Category Management", url: "/admin/categories", icon: Tag },
-    { title: "Profile", url: "/admin/profile", icon: User },
   ];
 
   const deliveryItems: SidebarItem[] = [
     { title: "Delivery Dashboard", url: "/delivery/dashboard", icon: LayoutDashboard },
     { title: "Ordered Orders", url: "/delivery/ordered", icon: ClipboardList },
     { title: "Delivered Orders", url: "/delivery/delivered", icon: PackageCheck },
-    { title: "Profile", url: "/delivery/profile", icon: User },
   ];
 
   const items = user?.role === "admin" ? adminItems : deliveryItems;

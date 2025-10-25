@@ -6,16 +6,11 @@ import HomeView from "@/modules/home/HomeView";
 import LoginView from "@/modules/auth/LoginView";
 import AdminView from "@/modules/admin/AdminView";
 import FoodManagementView from "@/modules/admin/food-management/FoodManagementView";
-import OrderView from "@/modules/admin/OrderView";
-import StoreView from "@/modules/admin/StoreView";
-import DeliveryView from "@/modules/admin/DeliveryView";
-import TownView from "@/modules/admin/TownView";
-import UserView from "@/modules/admin/UserView";
-import CategoryView from "@/modules/admin/CategoryView";
+
 import { useAuth } from "@/hooks/UseAuth";
 import React, { ReactNode } from "react";
-import ProfileView from "@/modules/admin/ProfileView";
 import Profile from "@/modules/user/Profile";
+import StoreManagementView from "@/modules/admin/store-management/StoreManagementView";
 
 // ✅ Define prop types properly
 interface ProtectedRouteProps {
@@ -78,14 +73,8 @@ const router = createBrowserRouter([
       children: [
         { path: "dashboard", element: <AdminView /> },
         { path: "", element: <AdminView /> }, 
-          { path: "foods", element: <FoodManagementView /> },
-          { path: "orders", element: <OrderView /> },
-          { path: "stores", element: <StoreView /> },
-          { path: "deliveries", element: <DeliveryView /> },
-          { path: "towns", element: <TownView /> },
-          { path: "users", element: <UserView /> },
-          { path: "categories", element: <CategoryView /> },
-          { path: "profile", element: <ProfileView /> },
+        { path: "foods", element: <FoodManagementView /> },
+        {path:"stores",element:<StoreManagementView/>}
       ],
     },
     {

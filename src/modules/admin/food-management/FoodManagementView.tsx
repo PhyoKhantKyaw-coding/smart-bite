@@ -4,9 +4,8 @@ import { Plus, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import FoodTable from './chunks/FoodTable';
 import AddEditFoodDialog from './chunks/AddEditFoodDialog';
-import { getAllFoods } from '@/api/user';
-import type { GetFoodDTO } from '@/api/user/types';
-import axios from '@/configs/axios';
+import { getAllFoods, addFood, updateFood, deleteFood } from '@/api/food';
+import type { GetFoodDTO } from '@/api/food/types';
 
 const FoodManagementView = () => {
   const [foods, setFoods] = useState<GetFoodDTO[]>([]);
@@ -61,29 +60,18 @@ const FoodManagementView = () => {
     try {
       if (selectedFood?.foodId) {
         // Update existing food
-        await axios.put('/Food/update', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        await updateFood(formData);
         toast.success('Food updated successfully!');
       } else {
         // Add new food
-        await axios.post('/Food/add', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        await addFood(formData);
         toast.success('Food added successfully!');
       }
       setDialogOpen(false);
       await fetchFoods();
     } catch (error) {
       console.error('Error saving food:', error);
-      const errorMessage = axios.isAxiosError(error) 
-        ? error.response?.data?.message || 'Failed to save food'
-        : 'Failed to save food';
-      toast.error(errorMessage);
+      toast.error('Failed to save food');
     } finally {
       setSaving(false);
     }
@@ -91,15 +79,12 @@ const FoodManagementView = () => {
 
   const handleDelete = async (foodId: string) => {
     try {
-      await axios.delete(`/Food/delete/${foodId}`);
+      await deleteFood(foodId);
       toast.success('Food deleted successfully!');
       await fetchFoods();
     } catch (error) {
       console.error('Error deleting food:', error);
-      const errorMessage = axios.isAxiosError(error)
-        ? error.response?.data?.message || 'Failed to delete food'
-        : 'Failed to delete food';
-      toast.error(errorMessage);
+      toast.error('Failed to delete food');
     }
   };
 

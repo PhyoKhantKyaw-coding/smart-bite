@@ -9,10 +9,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Upload, X } from 'lucide-react';
+import { Loader2, Upload, X, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import type { GetFoodDTO } from '@/api/user/types';
-import { getAllCategories } from '@/api/user';
+import { getAllCategories, addCategory } from '@/api/food';
 
 interface AddEditFoodDialogProps {
   open: boolean;
@@ -29,13 +29,16 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
     cost: '',
     cookingTime: '',
     foodDescription: '',
-    catName: '',
+    catId: '',
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [categories, setCategories] = useState<{ catName?: string }[]>([]);
+  const [categories, setCategories] = useState<{ catId?: string; catName?: string }[]>([]);
   const [otherTopics, setOtherTopics] = useState<string[]>(['']);
   const [isDark, setIsDark] = useState(() => document.body.classList.contains('dark'));
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [addingCategory, setAddingCategory] = useState(false);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -47,13 +50,16 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
 
   useEffect(() => {
     if (food) {
+      // Find catId from categories list by matching catName
+      const category = categories.find(cat => cat.catName === food.catName);
+      
       setFormData({
         name: food.name || '',
         eachPrice: food.eachPrice?.toString() || '',
         cost: food.cost?.toString() || '',
         cookingTime: food.cookingTime?.toString() || '',
         foodDescription: food.foodDescription || '',
-        catName: food.catName || '',
+        catId: category?.catId || '',
       });
       if (food.foodImage) {
         setImagePreview(`https://localhost:7112/api/${food.foodImage}`);
@@ -66,13 +72,13 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
         cost: '',
         cookingTime: '',
         foodDescription: '',
-        catName: '',
+        catId: '',
       });
       setImagePreview(null);
       setImageFile(null);
       setOtherTopics(['']);
     }
-  }, [food]);
+  }, [food, categories]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -89,6 +95,36 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
       fetchCategories();
     }
   }, [open]);
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error('Please enter a category name');
+      return;
+    }
+
+    setAddingCategory(true);
+    try {
+      const response = await addCategory(newCategoryName.trim());
+      if (response && response.data) {
+        toast.success('Category added successfully!');
+        // Refresh categories list
+        const categoriesResponse = await getAllCategories();
+        if (categoriesResponse && categoriesResponse.data) {
+          setCategories(categoriesResponse.data);
+        }
+        // Set the new category as selected
+        setFormData({ ...formData, catId: response.data.catId || '' });
+        // Reset add category form
+        setNewCategoryName('');
+        setShowAddCategory(false);
+      }
+    } catch (error) {
+      console.error('Error adding category:', error);
+      toast.error('Failed to add category');
+    } finally {
+      setAddingCategory(false);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -124,7 +160,7 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.eachPrice || !formData.catName) {
+    if (!formData.name || !formData.eachPrice || !formData.catId) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -135,10 +171,10 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
     submitData.append('Cost', formData.cost || '0');
     submitData.append('CookingTime', formData.cookingTime || '0');
     submitData.append('FoodDescription', formData.foodDescription);
-    submitData.append('CatName', formData.catName);
+    submitData.append('CatId', formData.catId);
 
     if (imageFile) {
-      submitData.append('FoodImageFile', imageFile);
+      submitData.append('FoodImage', imageFile);
     }
 
     // Add other topics (filter out empty strings)
@@ -221,21 +257,66 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
               <label htmlFor="category" className="text-sm font-medium" style={{ color: isDark ? '#fff' : '#000' }}>
                 Category *
               </label>
-              <select
-                id="category"
-                value={formData.catName}
-                onChange={(e) => setFormData({ ...formData, catName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                style={{ backgroundColor: isDark ? '#3f3f46' : '#fff', color: isDark ? '#fff' : '#000' }}
-                required
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.catName} value={cat.catName}>
-                    {cat.catName}
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-2">
+                <select
+                  id="category"
+                  value={formData.catId}
+                  onChange={(e) => setFormData({ ...formData, catId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  style={{ backgroundColor: isDark ? '#3f3f46' : '#fff', color: isDark ? '#fff' : '#000' }}
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.catId} value={cat.catId}>
+                      {cat.catName}
+                    </option>
+                  ))}
+                </select>
+                
+                {/* Add Category Button */}
+                {!showAddCategory ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddCategory(true)}
+                    className="w-full gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add New Category
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Enter category name"
+                      disabled={addingCategory}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddCategory}
+                      disabled={addingCategory}
+                      size="sm"
+                    >
+                      {addingCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowAddCategory(false);
+                        setNewCategoryName('');
+                      }}
+                      disabled={addingCategory}
+                      size="sm"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Price */}
