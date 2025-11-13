@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "postinstall": "chmod +x node_modules/.bin/esbuild || true",
-    "build": "pnpm run build"
+     "build": "vite build"  
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",

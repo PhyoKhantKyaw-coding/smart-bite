@@ -3,14 +3,10 @@
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
   "framework": "vite",
-  "functions": {
-    "api/**/*.ts": {
-      "includeFiles": "**/*"
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  }
+  ]
 }
