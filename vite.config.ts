@@ -10,4 +10,18 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+   optimizeDeps: {
+    esbuildOptions: {
+      // Add this for Vercel deployment
+      platform: 'node',
+    },
+  },
+  build: {
+    // Ensure proper chunking for Vercel
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
 })
