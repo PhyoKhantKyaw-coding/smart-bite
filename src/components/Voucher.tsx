@@ -3,46 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Clock, MapPin, Calendar, User, Store, Bike, CreditCard, Package } from "lucide-react";
 
-interface VoucherDTO {
-  orderId: string;
-  userName: string;
-  townName: string;
-  storeName: string;
-  deliveryName: string;
-  paymentType: string;
-  orderDescription: string;
-  status: string;
-  totalPrice: number;
-  totalCost: number;
-  totalProfit: number;
-  estimatedDeliveryTime: number;
-  deliveryStarted?: Date;
-  deliveredTime?: Date;
-  cartDTOs: OrderDetailDTO[];
-}
-
-interface OrderDetailDTO {
-  totalPrice: number;
-  name: string;
-  eachPrice: number;
-  cookingTime: number;
-  foodImage: string;
-  foodDescription: string;
-  catName: string;
-  quantity: number;
-  topics?: OtherTopicModel[];
-}
-
-interface OtherTopicModel {
-  otherId: string;
-  otherName: string;
-}
-
 interface VoucherProps {
   voucher: VoucherDTO;
 }
 
-const formatDateTime = (date: Date) => {
+const formatDateTime = (date: Date | string | undefined) => {
+  if (!date) return "N/A";
   return new Date(date).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -52,7 +18,7 @@ const formatDateTime = (date: Date) => {
 };
 
 const Voucher: React.FC<VoucherProps> = ({ voucher }) => {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
     switch (status?.toLowerCase()) {
       case "pending":
         return "bg-yellow-500";
@@ -76,10 +42,10 @@ const Voucher: React.FC<VoucherProps> = ({ voucher }) => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold">Order Voucher</h2>
-            <p className="text-sm opacity-90">Order #{voucher.orderId.slice(0, 8)}</p>
+            <p className="text-sm opacity-90">Order #{voucher.orderId?.slice(0, 8) || 'N/A'}</p>
           </div>
           <Badge className={`${getStatusColor(voucher.status)} text-white text-sm px-4 py-2`}>
-            {voucher.status}
+            {voucher.status || 'Unknown'}
           </Badge>
         </div>
         
@@ -111,7 +77,7 @@ const Voucher: React.FC<VoucherProps> = ({ voucher }) => {
             Order Items
           </h3>
           
-          {voucher.cartDTOs.map((item, index) => (
+          {voucher.cartDTOs?.map((item, index) => (
             <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
               <img
                 src={item.foodImage ? `https://localhost:7112/api/${item.foodImage}` : '/placeholder-food.jpg'}
@@ -131,7 +97,7 @@ const Voucher: React.FC<VoucherProps> = ({ voucher }) => {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-primary">
-                      {item.eachPrice.toLocaleString()} MMK
+                      {item.eachPrice?.toLocaleString() || 0} MMK
                     </p>
                     <p className="text-sm text-muted-foreground">x {item.quantity}</p>
                   </div>
@@ -141,7 +107,7 @@ const Voucher: React.FC<VoucherProps> = ({ voucher }) => {
                   <div className="flex flex-wrap gap-1 mt-2">
                     {item.topics.map((topic, idx) => (
                       <Badge key={idx} variant="secondary" className="text-xs">
-                        {topic.otherName}
+                        {topic.topicName}
                       </Badge>
                     ))}
                   </div>
@@ -152,9 +118,11 @@ const Voucher: React.FC<VoucherProps> = ({ voucher }) => {
                     <Clock className="w-3 h-3" />
                     {item.cookingTime} min
                   </div>
-                  <div className="font-semibold">
-                    Subtotal: {item.totalPrice.toLocaleString()} MMK
-                  </div>
+                  {item.totalPrice && (
+                    <div className="font-semibold">
+                      Subtotal: {item.totalPrice.toLocaleString()} MMK
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -216,16 +184,16 @@ const Voucher: React.FC<VoucherProps> = ({ voucher }) => {
           <div className="flex items-center justify-between text-lg">
             <span className="font-semibold">Total Amount</span>
             <span className="text-2xl font-bold text-primary">
-              {voucher.totalPrice.toLocaleString()} MMK
+              {voucher.totalPrice?.toLocaleString() || 0} MMK
             </span>
           </div>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>Cost</span>
-            <span>{voucher.totalCost.toLocaleString()} MMK</span>
+            <span>{voucher.totalCost?.toLocaleString() || 0} MMK</span>
           </div>
           <div className="flex items-center justify-between text-sm text-green-600">
             <span>Profit</span>
-            <span className="font-semibold">+{voucher.totalProfit.toLocaleString()} MMK</span>
+            <span className="font-semibold">+{voucher.totalProfit?.toLocaleString() || 0} MMK</span>
           </div>
         </div>
       </CardContent>

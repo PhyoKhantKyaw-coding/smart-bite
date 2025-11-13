@@ -8,11 +8,11 @@ import ProductDetailDialog from "./chunks/ProductDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { mockOrderHistory } from "@/lib/mockData";
 import { toast } from "sonner";
 import { useDialogContext } from "@/contexts/DialogContext";
 import { useAuth } from "@/hooks/UseAuth";
 import { getAllFoods, getAllCategories, addToCart as addToCartAPI, addToFavorite as addToFavoriteAPI, getCart, getFavorites } from "@/api/user";
+import { getMyOrders } from "@/api/delivery";
 import type { GetFoodDTO, CategoryDTO, GetCartDTO, GetFavoriteDTO } from "@/api/user/types";
 
 const Home = () => {
@@ -28,6 +28,17 @@ const Home = () => {
   const [loadingFoods, setLoadingFoods] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const { showCartDialog, setShowCartDialog, showFavoriteDialog, setShowFavoriteDialog, showOrderHistoryDialog, setShowOrderHistoryDialog } = useDialogContext();
+
+  // Use real API for order history
+  const { data: ordersResponse, refetch: refetchOrders } = getMyOrders.useQuery({
+    enabled: !!user && user.role === 'user',
+  });
+
+  const orderHistory = ordersResponse?.data || [];
+
+  const handleRefreshOrders = async () => {
+    await refetchOrders();
+  };
 
   const fetchFoods = useCallback(async () => {
     setLoadingFoods(true);
@@ -156,11 +167,27 @@ const Home = () => {
     }
   };
 
-  const handleReorder = (orderId: string) => {
-    const order = mockOrderHistory.find((o) => o.orderId === orderId);
-    if (order) {
-      toast.success("Items added to cart!");
-      setShowOrderHistoryDialog(false);
+  const handleReorder = async (orderId: string) => {
+    try {
+      const order = orderHistory.find((o) => o.orderId === orderId);
+      if (order && order.cartDTOs) {
+        // Add all items from the order back to cart
+        for (const item of order.cartDTOs) {
+          if (item.foodId) {
+            await addToCartAPI({ 
+              foodId: item.foodId, 
+              quantity: item.quantity || 1, 
+              topics: item.topics?.map(t => ({ topicId: t.topicId, topicName: t.topicName })) || [] 
+            });
+          }
+        }
+        await fetchCart();
+        toast.success("Items added to cart!");
+        setShowOrderHistoryDialog(false);
+      }
+    } catch (error) {
+      console.error('Error reordering:', error);
+      toast.error("Failed to reorder items");
     }
   };
 
@@ -234,7 +261,7 @@ const Home = () => {
       {selectedFoodId && (<ProductDetailDialog open={showProductDetail} onOpenChange={setShowProductDetail} foodId={selectedFoodId} onAddToCart={handleAddToCart} onAddToFavorite={handleToggleFavorite} />)}
       <CartDialog open={showCartDialog} onOpenChange={setShowCartDialog} cartItems={cartItems} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveCartItem} onProceedToOrder={handleProceedToOrder} />
       <FavoriteDialog open={showFavoriteDialog} onOpenChange={setShowFavoriteDialog} favoriteItems={favoriteItems} onRemoveFavorite={handleRemoveFavorite} onAddToCart={handleAddToCartFromFavorite} />
-      <OrderHistoryDialog open={showOrderHistoryDialog} onOpenChange={setShowOrderHistoryDialog} orders={mockOrderHistory} onReorder={handleReorder} />
+      <OrderHistoryDialog open={showOrderHistoryDialog} onOpenChange={setShowOrderHistoryDialog} orders={orderHistory} onReorder={handleReorder} onRefresh={handleRefreshOrders} />
     </>
   );
 };

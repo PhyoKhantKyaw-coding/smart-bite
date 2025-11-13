@@ -4,13 +4,15 @@ import AdminLayout from "@/layouts/AdminLayout";
 import DeliveryLayout from "@/layouts/DeliveryLayout";
 import HomeView from "@/modules/home/HomeView";
 import LoginView from "@/modules/auth/LoginView";
-import AdminView from "@/modules/admin/AdminView";
+import DashboardView from "@/modules/admin/dashboard/DashboardView";
+import DashboardV2View from "@/modules/admin/dashboard-v2/DashboardV2View";
 import FoodManagementView from "@/modules/admin/food-management/FoodManagementView";
 import UserManagementView from "@/modules/admin/user-management/UserView";
+import StoreManagementView from "@/modules/admin/store-management/StoreManagementView";
+import DeliveryManagementView from "@/modules/admin/delivery-management/DeliveryManagementView";
 
 import { useAuth } from "@/hooks/UseAuth";
 import React, { ReactNode } from "react";
-import StoreManagementView from "@/modules/admin/store-management/StoreManagementView";
 
 // ✅ Define prop types properly
 interface ProtectedRouteProps {
@@ -70,10 +72,12 @@ const router = createBrowserRouter([
         </ProtectedRoute>
       ),
       children: [
-        { path: "dashboard", element: <AdminView /> },
-        { path: "", element: <AdminView /> }, 
+        { path: "", element: <DashboardV2View /> },
+        { path: "dashboard", element: <DashboardView /> },
+        { path: "dashboard-v2", element: <DashboardV2View /> },
         { path: "foods", element: <FoodManagementView /> },
         { path: "stores", element: <StoreManagementView /> },
+        { path: "deliveries", element: <DeliveryManagementView /> },
         { path: "users", element: <UserManagementView /> }
       ],
     },

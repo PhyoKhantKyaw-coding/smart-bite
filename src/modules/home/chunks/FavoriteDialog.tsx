@@ -34,18 +34,18 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95%] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center gap-2">
-            <Heart className="w-6 h-6 text-red-500 fill-red-500" />
+          <DialogTitle className="text-xl sm:text-2xl flex items-center gap-2">
+            <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 fill-red-500" />
             My Favorites
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Your favorite foods collection
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {favoriteItems.length === 0 ? (
             <div className="text-center py-12">
               <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />

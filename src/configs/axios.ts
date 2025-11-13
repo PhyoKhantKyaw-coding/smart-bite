@@ -2,7 +2,8 @@ import axios from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
 // Update this URL to your backend API
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7112/';
+// axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7112/';
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'https://foodorderinganddeliverysystem-smartbite-1.onrender.com/';
 
 // Add a request interceptor
 axios.interceptors.request.use(

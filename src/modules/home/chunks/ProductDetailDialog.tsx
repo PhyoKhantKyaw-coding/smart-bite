@@ -75,8 +75,8 @@ const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[95%] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="space-y-4">
+        <DialogContent className="w-[95vw] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[95vh] overflow-y-auto">
+          <div className="space-y-3 sm:space-y-4">
             <Skeleton className="h-64 w-full rounded-lg" />
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-4 w-full" />
@@ -96,17 +96,17 @@ const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95%] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+          <DialogTitle className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
             {food.name}
           </DialogTitle>
-          <DialogDescription>
-            {food.catName && <Badge className="gradient-primary">{food.catName}</Badge>}
+          <DialogDescription className="text-xs sm:text-sm">
+            {food.catName && <Badge className="gradient-primary text-xs sm:text-sm">{food.catName}</Badge>}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Product Image */}
           {food.foodImage && (
             <div className="relative w-full h-64 md:h-96 rounded-lg overflow-hidden bg-gray-100">
