@@ -9,11 +9,6 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  "scripts": {
-  "build": "tsc -b && vite build",
-  "postinstall": "node -e \"require('esbuild').install()\""
-},
-
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.6",
