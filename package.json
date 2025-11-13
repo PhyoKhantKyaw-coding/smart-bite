@@ -3,12 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
+ "scripts": {
     "dev": "vite",
     "lint": "eslint .",
     "preview": "vite preview",
-    "postinstall": "chmod +x node_modules/.bin/esbuild || true",
-     "build": "vite build"  
+    "postinstall": "find node_modules -name \"esbuild\" -type f -exec chmod +x {} \\; || true",
+    "build": "vite build"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
