@@ -35,7 +35,7 @@ const options = {
 };
 
 const CategoryChart = () => (
-  <Card className="shadow-lg bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 dark:from-pink-950/30 dark:via-rose-950/30 dark:to-orange-950/30 border-pink-200 dark:border-pink-800">
+  <Card className="shadow-lg bg-linear-to-br from-pink-50 via-rose-50 to-orange-50 dark:from-pink-950/30 dark:via-rose-950/30 dark:to-orange-950/30 border-pink-200 dark:border-pink-800">
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <PieChart className="w-5 h-5 text-pink-500" />

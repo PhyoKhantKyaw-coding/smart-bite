@@ -10,7 +10,7 @@ const products = [
 ];
 
 const TopProducts = () => (
-  <Card className="shadow-lg bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/30 dark:via-yellow-950/30 dark:to-orange-950/30 border-amber-200 dark:border-amber-800">
+  <Card className="shadow-lg bg-linear-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/30 dark:via-yellow-950/30 dark:to-orange-950/30 border-amber-200 dark:border-amber-800">
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <Award className="w-5 h-5 text-yellow-500" />

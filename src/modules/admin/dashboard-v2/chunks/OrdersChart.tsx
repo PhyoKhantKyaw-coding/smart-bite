@@ -42,7 +42,7 @@ const options = {
 };
 
 const OrdersChart = () => (
-  <Card className="shadow-lg bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 dark:from-purple-950/30 dark:via-pink-950/30 dark:to-rose-950/30 border-purple-200 dark:border-purple-800">
+  <Card className="shadow-lg bg-linear-to-br from-purple-50 via-pink-50 to-rose-50 dark:from-purple-950/30 dark:via-pink-950/30 dark:to-rose-950/30 border-purple-200 dark:border-purple-800">
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <ShoppingCart className="w-5 h-5 text-purple-500" />

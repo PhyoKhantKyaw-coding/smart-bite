@@ -32,12 +32,12 @@ const DashboardV2View = () => {
   const [timeRange, setTimeRange] = useState<"today" | "week" | "month" | "year">("week");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-6 lg:p-8">
       <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-3">
               <BarChart3 className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" />
               Analytics Dashboard
             </h1>
@@ -57,7 +57,7 @@ const DashboardV2View = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="relative overflow-hidden border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-slate-900">
+          <Card className="relative overflow-hidden border-l-4 border-l-blue-500 bg-linear-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-slate-900">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
               <DollarSign className="w-5 h-5 text-blue-500" />
@@ -72,7 +72,7 @@ const DashboardV2View = () => {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-slate-900">
+          <Card className="relative overflow-hidden border-l-4 border-l-purple-500 bg-linear-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-slate-900">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders</CardTitle>
               <ShoppingCart className="w-5 h-5 text-purple-500" />
@@ -87,7 +87,7 @@ const DashboardV2View = () => {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-slate-900">
+          <Card className="relative overflow-hidden border-l-4 border-l-green-500 bg-linear-to-br from-green-50 to-white dark:from-green-950/20 dark:to-slate-900">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Customers</CardTitle>
               <Users className="w-5 h-5 text-green-500" />
@@ -102,7 +102,7 @@ const DashboardV2View = () => {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50 to-white dark:from-orange-950/20 dark:to-slate-900">
+          <Card className="relative overflow-hidden border-l-4 border-l-orange-500 bg-linear-to-br from-orange-50 to-white dark:from-orange-950/20 dark:to-slate-900">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Avg Order Value</CardTitle>
               <Package className="w-5 h-5 text-orange-500" />

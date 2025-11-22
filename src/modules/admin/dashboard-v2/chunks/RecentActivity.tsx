@@ -22,7 +22,7 @@ const statusColors: Record<string, BadgeVariant> = {
 };
 
 const RecentActivity = () => (
-  <Card className="shadow-lg bg-gradient-to-br from-cyan-50 via-sky-50 to-blue-50 dark:from-cyan-950/30 dark:via-sky-950/30 dark:to-blue-950/30 border-cyan-200 dark:border-cyan-800">
+  <Card className="shadow-lg bg-linear-to-br from-cyan-50 via-sky-50 to-blue-50 dark:from-cyan-950/30 dark:via-sky-950/30 dark:to-blue-950/30 border-cyan-200 dark:border-cyan-800">
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <Clock className="w-5 h-5 text-blue-500" />

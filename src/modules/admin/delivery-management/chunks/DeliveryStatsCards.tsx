@@ -71,7 +71,7 @@ const DeliveryStatsCards: React.FC<StatsCardsProps> = ({ stats }) => {
           <CardContent className="p-0">
             <div className={`${card.bgColor} p-4`}>
               <div className="flex items-center justify-between mb-3">
-                <div className={`p-2 rounded-lg bg-gradient-to-br ${card.color}`}>
+                <div className={`p-2 rounded-lg bg-linear-to-br ${card.color}`}>
                   <card.icon className="w-5 h-5 text-white" />
                 </div>
               </div>

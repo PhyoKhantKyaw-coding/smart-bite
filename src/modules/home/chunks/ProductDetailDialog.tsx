@@ -98,7 +98,7 @@ const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+          <DialogTitle className="text-lg sm:text-2xl font-bold bg-linear-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
             {food.name}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">

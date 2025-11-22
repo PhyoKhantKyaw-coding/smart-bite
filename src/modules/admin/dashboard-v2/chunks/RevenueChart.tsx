@@ -65,7 +65,7 @@ const options = {
 };
 
 const RevenueChart = ({ timeRange }: { timeRange: string }) => (
-  <Card className="shadow-lg bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-purple-950/30 border-blue-200 dark:border-blue-800">
+  <Card className="shadow-lg bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-purple-950/30 border-blue-200 dark:border-blue-800">
     <CardHeader>
       <div className="flex items-center justify-between">
         <CardTitle className="flex items-center gap-2">

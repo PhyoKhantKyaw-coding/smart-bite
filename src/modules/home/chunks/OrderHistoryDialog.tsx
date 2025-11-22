@@ -169,7 +169,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                     key={order.orderId}
                     className="overflow-hidden hover:shadow-lg transition-shadow"
                   >
-                    <div className="bg-gradient-to-r from-orange-50 to-pink-50 p-3 sm:p-4">
+                    <div className="bg-linear-to-r from-orange-50 to-pink-50 p-3 sm:p-4">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
                           <div className="p-2 bg-white rounded-lg">
@@ -227,22 +227,22 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                       {/* Summary Info */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3 text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
                           <span className="text-muted-foreground">Town:</span>
                           <span className="font-medium truncate">{order.townName}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Store className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                          <Store className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
                           <span className="text-muted-foreground">Store:</span>
                           <span className="font-medium truncate">{order.storeName}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Bike className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                          <Bike className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
                           <span className="text-muted-foreground">Delivery:</span>
                           <span className="font-medium truncate">{order.deliveryName}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                          <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
                           <span className="text-muted-foreground">Payment:</span>
                           <span className="font-medium truncate">{order.paymentType}</span>
                         </div>
@@ -262,7 +262,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                                 <img
                                   src={item.foodImage ? `https://localhost:7112/api/${item.foodImage}` : '/placeholder-food.jpg'}
                                   alt={item.name}
-                                  className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded flex-shrink-0"
+                                  className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded shrink-0"
                                 />
                                 <div className="flex-1 text-xs min-w-0">
                                   <div className="flex items-start justify-between gap-2">
@@ -272,7 +272,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                                         {item.catName}
                                       </Badge>
                                     </div>
-                                    <div className="text-right flex-shrink-0">
+                                    <div className="text-right shrink-0">
                                       <p className="font-semibold text-primary whitespace-nowrap">
                                         {item.eachPrice?.toLocaleString() || 0} MMK
                                       </p>

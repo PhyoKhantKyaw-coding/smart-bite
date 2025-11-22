@@ -47,7 +47,7 @@ const KPayQRDialog: React.FC<KPayQRDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-3 sm:space-y-4">
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 sm:p-6 text-center">
+          <div className="bg-linear-to-br from-purple-50 to-pink-50 rounded-lg p-4 sm:p-6 text-center">
             <div className="bg-white p-3 sm:p-4 rounded-lg inline-block">
               {/* QR Code placeholder - integrate with KPay API */}
               <div className="w-40 h-40 sm:w-48 sm:h-48 bg-gray-100 flex items-center justify-center border-2">

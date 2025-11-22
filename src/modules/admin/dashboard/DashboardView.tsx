@@ -22,12 +22,12 @@ const DashboardView = () => {
   const [lineChartRange, setLineChartRange] = useState<"week" | "month">("month");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
               <BarChart2 className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
               Admin Dashboard
             </h1>

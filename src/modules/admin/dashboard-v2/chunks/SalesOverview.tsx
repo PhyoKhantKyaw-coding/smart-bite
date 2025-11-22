@@ -9,7 +9,7 @@ const stats = [
 ];
 
 const SalesOverview = () => (
-  <Card className="shadow-lg bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 dark:from-indigo-950/30 dark:via-violet-950/30 dark:to-purple-950/30 border-indigo-200 dark:border-indigo-800">
+  <Card className="shadow-lg bg-linear-to-br from-indigo-50 via-violet-50 to-purple-50 dark:from-indigo-950/30 dark:via-violet-950/30 dark:to-purple-950/30 border-indigo-200 dark:border-indigo-800">
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <Activity className="w-5 h-5 text-indigo-500" />

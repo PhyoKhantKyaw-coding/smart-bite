@@ -38,7 +38,7 @@ const Voucher: React.FC<VoucherProps> = ({ voucher }) => {
   return (
     <Card className="w-full max-w-3xl mx-auto overflow-hidden shadow-lg">
       {/* Header Section */}
-      <CardHeader className="bg-gradient-to-r from-orange-500 to-pink-500 text-white p-6">
+      <CardHeader className="bg-linear-to-r from-orange-500 to-pink-500 text-white p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold">Order Voucher</h2>

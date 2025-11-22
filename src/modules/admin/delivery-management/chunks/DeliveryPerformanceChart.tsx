@@ -33,7 +33,7 @@ const DeliveryPerformanceChart = () => {
                     {data.deliveries}
                   </span>
                   <div
-                    className="w-full bg-gradient-to-t from-orange-500 to-pink-500 rounded-t-lg transition-all hover:opacity-80"
+                    className="w-full bg-linear-to-t from-orange-500 to-pink-500 rounded-t-lg transition-all hover:opacity-80"
                     style={{
                       height: `${(data.deliveries / maxDeliveries) * 100}%`,
                       minHeight: "20px",

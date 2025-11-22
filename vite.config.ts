@@ -8,16 +8,26 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      'stream': 'stream-browserify',
+      'url': 'url-browserify'
     },
   },
-   optimizeDeps: {
+  define: {
+    'process.env': {},
+    'global': 'globalThis',
+  },
+  optimizeDeps: {
+    exclude: ['follow-redirects'],
     esbuildOptions: {
-      // Add this for Vercel deployment
-      platform: 'node',
+      define: {
+        global: 'globalThis'
+      },
     },
   },
   build: {
-    // Ensure proper chunking for Vercel
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       output: {
         manualChunks: undefined,
