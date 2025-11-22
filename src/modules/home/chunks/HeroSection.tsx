@@ -23,16 +23,16 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
         <path d="M 100 360 L 130 360 M 200 320 L 230 310 M 320 280 L 350 280 M 440 340 L 470 350 M 580 280 L 610 270 M 700 240 L 730 240 M 820 300 L 850 310 M 950 180 L 980 160" 
           stroke="#fff" strokeWidth="3" strokeDasharray="20,15" opacity="0.5" />
         
-        {/* Store icon at start */}
+        {/* Customer home at start */}
         <g transform="translate(60, 340)">
-          <rect x="0" y="0" width="40" height="40" rx="8" fill="#34d399" />
-          <text x="20" y="28" fontSize="24" textAnchor="middle" fill="#fff">🏪</text>
-        </g>
-        
-        {/* Customer home at end */}
-        <g transform="translate(1100, 80)">
           <rect x="0" y="0" width="40" height="40" rx="8" fill="#f472b6" />
           <text x="20" y="28" fontSize="24" textAnchor="middle" fill="#fff">🏠</text>
+        </g>
+        
+        {/* Store icon at end */}
+        <g transform="translate(1100, 80)">
+          <rect x="0" y="0" width="40" height="40" rx="8" fill="#34d399" />
+          <text x="20" y="28" fontSize="24" textAnchor="middle" fill="#fff">🏪</text>
         </g>
         
         {/* Waypoint markers */}
@@ -44,7 +44,7 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
 
       {/* Enhanced Deliveryman animation */}
       <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }}>
-        {/* Forward delivery */}
+        {/* Forward journey to store - no box initially */}
         <div id="deliveryman-container" style={{ 
           position: 'absolute', 
           fontSize: 44, 
@@ -53,17 +53,9 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
           filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2)'
         }}>
           🚴‍♂️
-          {/* Delivery box */}
-          <span style={{ 
-            position: 'absolute', 
-            top: -8, 
-            right: -12, 
-            fontSize: 20,
-            animation: 'boxBounce 0.5s ease-in-out infinite'
-          }}>📦</span>
         </div>
 
-        {/* Return journey */}
+        {/* Return journey with delivery box */}
         <div id="deliveryman-return" style={{ 
           position: 'absolute', 
           fontSize: 44, 
@@ -74,6 +66,15 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
           transform: 'scaleX(-1)'
         }}>
           🚴‍♂️
+          {/* Delivery box appears on return journey */}
+          <span style={{ 
+            position: 'absolute', 
+            top: -8, 
+            left: -12, 
+            fontSize: 20,
+            animation: 'boxBounce 0.5s ease-in-out infinite',
+            transform: 'scaleX(-1)'
+          }}>📦</span>
         </div>
 
         {/* Speed lines effect */}

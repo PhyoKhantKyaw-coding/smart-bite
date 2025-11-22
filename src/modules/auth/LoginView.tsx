@@ -289,7 +289,7 @@ const LoginView = () => {
           </button>
           <div className="grid md:grid-cols-2">
             {/* Left Side - Branding */}
-            <div className="hidden md:flex flex-col justify-center p-12 bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
+            <div className="hidden md:flex flex-col justify-center p-12 text-white bg-linear-to-br from-yellow-400 to-yellow-600">
               <h2 className="text-4xl font-bold mb-4">Smart Bite</h2>
               <p className="text-lg mb-6">Delicious Food, Delivered Fast</p>
               <div className="space-y-4">

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getUserById } from '@/api/user';
 import type { GetUserDTO } from '@/api/user/types';
+import { getProfileImageUrl } from '@/lib/imageUtils';
 
 interface ProfileDialogProps {
   open: boolean;
@@ -50,6 +51,11 @@ const ProfileDialog = ({
   const [profileData, setProfileData] = useState<GetUserDTO | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Don't render if user is null
+  if (!user) {
+    return null;
+  }
+
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setIsDark(document.body.classList.contains('dark'));
@@ -64,7 +70,7 @@ const ProfileDialog = ({
   // Fetch fresh user data when dialog opens
   useEffect(() => {
     const fetchUserData = async () => {
-      if (open && user.userId) {
+      if (open && user && user.userId) {
         setIsLoading(true);
         try {
           const response = await getUserById(user.userId);
@@ -82,7 +88,7 @@ const ProfileDialog = ({
     };
 
     fetchUserData();
-  }, [open, user.userId]);
+  }, [open, user?.userId]);
 
   // Use profileData if available, otherwise fallback to user prop
   const displayData = profileData || user;
@@ -90,17 +96,8 @@ const ProfileDialog = ({
   const displayEmail = displayData.userEmail || user.email || user.userEmail || 'No email';
   const displayRole = displayData.roleName || user.role;
 
-  // Get profile image URL
-  const getProfileImageUrl = () => {
-    const profilePath = displayData.userProfile || user.userProfile;
-    if (!profilePath) return undefined;
-    
-    if (profilePath.startsWith('http://') || profilePath.startsWith('https://')) {
-      return profilePath;
-    }
-    
-    return `https://localhost:7112/api/${profilePath}`;
-  };
+  // Get profile image URL - use the imported utility function
+  const profileImageUrl = getProfileImageUrl(displayData.userProfile || user.userProfile);
 
   // Get role color
   const getRoleColor = () => {
@@ -163,7 +160,7 @@ const ProfileDialog = ({
             <div className="relative">
               <Avatar className="w-28 h-28 border-4 border-white shadow-xl">
                 <AvatarImage
-                  src={getProfileImageUrl()}
+                  src={profileImageUrl}
                   alt={displayName}
                   className="object-cover"
                 />

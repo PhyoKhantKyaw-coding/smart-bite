@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/UseAuth";
+import { getFoodImageUrl } from "@/lib/imageUtils";
 
 interface FoodCardProps {
   food: {
@@ -55,7 +56,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite
     >
       <div className="relative aspect-square overflow-hidden">
         <img
-          src={food.foodImage ? `https://localhost:7112/api/${food.foodImage}` : '/placeholder-food.jpg'}
+          src={getFoodImageUrl(food.foodImage)}
           alt={food.name}
           className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
         />

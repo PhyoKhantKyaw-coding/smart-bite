@@ -2,7 +2,7 @@
 import { Facebook, Instagram, Twitter } from "lucide-react";
 
 const Footer = () => (
-  <footer className="w-full bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 mt-8">
+  <footer className="w-full bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800">
     <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
       {/* Logo and Brand */}
       <div className="flex flex-col items-center md:items-start">

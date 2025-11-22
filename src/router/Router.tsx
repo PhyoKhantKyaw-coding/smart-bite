@@ -2,7 +2,10 @@ import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
 import UserLayout from "@/layouts/UserLayout";
 import AdminLayout from "@/layouts/AdminLayout";
 import DeliveryLayout from "@/layouts/DeliveryLayout";
+import DefaultLayout from "@/layouts/DefaultLayout";
 import HomeView from "@/modules/home/HomeView";
+import AboutView from "@/modules/about/AboutView";
+import ContactView from "@/modules/contact/ContactView";
 import LoginView from "@/modules/auth/LoginView";
 import DashboardView from "@/modules/admin/dashboard/DashboardView";
 import DashboardV2View from "@/modules/admin/dashboard-v2/DashboardV2View";
@@ -50,6 +53,9 @@ const router = createBrowserRouter([
     element: <RedirectIfUserExists />,
     children: [
       { path: "", element: <HomeView /> },
+      { path: "about", element: <AboutView /> },
+      { path: "menu", element: <HomeView /> },
+      { path: "contact", element: <ContactView /> },
       { path: "auth", element: <LoginView /> },
     ],
   },
@@ -62,6 +68,9 @@ const router = createBrowserRouter([
       ),
       children: [
         { path: "", element: <HomeView /> },
+        { path: "about", element: <AboutView /> },
+        { path: "menu", element: <HomeView /> },
+        { path: "contact", element: <ContactView /> },
       ],
     },
     {

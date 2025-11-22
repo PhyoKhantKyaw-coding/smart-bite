@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUserById } from '@/api/user';
+import { getProfileImageUrl } from '@/lib/imageUtils';
 
 // User DTO interface based on C# GetUserDTO
 interface UserProfile {
@@ -92,17 +93,6 @@ const Profile: React.FC = () => {
       newPassword: '',
       confirmPassword: '',
     });
-  };
-
-  // Helper function to get profile image URL
-  const getProfileImageUrl = (profilePath?: string) => {
-    if (!profilePath) return undefined;
-    
-    if (profilePath.startsWith('http://') || profilePath.startsWith('https://')) {
-      return profilePath;
-    }
-    
-    return `https://localhost:7112/api/${profilePath}`;
   };
 
   // Show loading state
@@ -222,7 +212,7 @@ const Profile: React.FC = () => {
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold bg-linear-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
           My Profile
         </h1>
         {!isEditing && (

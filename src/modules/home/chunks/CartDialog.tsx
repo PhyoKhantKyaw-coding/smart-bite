@@ -13,6 +13,7 @@ import { Plus, Minus, Trash2, ShoppingCart, Package } from "lucide-react";
 import type { GetCartDTO } from "@/api/user/types";
 import { useState } from "react";
 import AddOrderDialog from "./AddOrderDialog";
+import { getFoodImageUrl } from "@/lib/imageUtils";
 
 interface CartDialogProps {
   open: boolean;
@@ -84,7 +85,7 @@ const CartDialog: React.FC<CartDialogProps> = ({
                     <Card key={item.foodId} className="overflow-hidden hover:shadow-md transition-shadow">
                       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4">
                         <img
-                          src={item.foodImage ? `https://localhost:7112/api/${item.foodImage}` : '/placeholder-food.jpg'}
+                          src={getFoodImageUrl(item.foodImage)}
                           alt={item.name}
                           className="w-full sm:w-24 h-32 sm:h-24 object-cover rounded-lg"
                         />

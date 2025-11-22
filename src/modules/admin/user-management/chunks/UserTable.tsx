@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Search, Mail, Phone, MapPin, Shield, User as UserIcon } from 'lucide-react';
 import type { GetUserDTO } from '@/api/user/types';
+import { getProfileImageUrl } from '@/lib/imageUtils';
 
 interface UserTableProps {
   users: GetUserDTO[];
@@ -129,9 +130,7 @@ const UserTable = ({ users, onEdit, onDelete, isLoading }: UserTableProps) => {
                   {user.userProfile ? (
                     <img
                       src={
-                        user.userProfile.startsWith('http://') || user.userProfile.startsWith('https://')
-                          ? user.userProfile
-                          : `https://localhost:7112/api/${user.userProfile}`
+                        getProfileImageUrl(user.userProfile)
                       }
                       alt={user.userName || 'User'}
                       className="w-full h-full object-cover"

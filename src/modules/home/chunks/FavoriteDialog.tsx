@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, Clock, Trash2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import type { GetFavoriteDTO } from "@/api/user/types";
+import { getFoodImageUrl } from "@/lib/imageUtils";
 
 interface FavoriteDialogProps {
   open: boolean;
@@ -63,7 +64,7 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
                 >
                   <div className="relative">
                     <img
-                      src={item.foodImage ? `https://localhost:7112/api/${item.foodImage}` : '/placeholder-food.jpg'}
+                      src={getFoodImageUrl(item.foodImage)}
                       alt={item.name}
                       className="w-full h-40 sm:h-48 object-cover"
                     />

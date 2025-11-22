@@ -1,11 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { UtensilsCrossed, Sun, Moon, Bell, LogOut, ChevronDown, ShoppingCart, Heart, Package } from "lucide-react";
-import { Avatar,  AvatarImage } from "@/components/ui/avatar";
+import { UtensilsCrossed, Sun, Moon, Bell, LogOut, ShoppingCart, Heart, Package, Menu, X } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "./UseAuth";
-import React, { useState} from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ProfileDialog from "@/components/ProfileDialog";
-import { AvatarFallback } from "@radix-ui/react-avatar";
+import { getProfileImageUrl } from "@/lib/imageUtils";
 
 interface HeaderProps {
   isCollapsed?: boolean;
@@ -27,12 +27,10 @@ const Header: React.FC<HeaderProps> = ({
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
-
-const sessionData = sessionStorage.getItem("userProfile");
-const userProfileData = sessionData ? JSON.parse(sessionData) : null;
+  const sessionData = sessionStorage.getItem("userProfile");
+  const userProfileData = sessionData ? JSON.parse(sessionData) : null;
 
   const handleLogout = () => {
     logout();
@@ -47,12 +45,9 @@ const userProfileData = sessionData ? JSON.parse(sessionData) : null;
 
   const handleToggleDark = () => {
     if (typeof setDarkMode === 'function') {
-      // If parent manages dark mode, delegate
       setDarkMode(!darkMode);
       return;
     }
-
-    // Otherwise manage body class and persist preference
     if (typeof window === 'undefined') return;
     const currentlyDark = document.body.classList.contains('dark') || localStorage.getItem('theme') === 'dark';
     if (currentlyDark) {
@@ -62,28 +57,6 @@ const userProfileData = sessionData ? JSON.parse(sessionData) : null;
       document.body.classList.add('dark');
       localStorage.setItem('theme', 'dark');
     }
-  };
-
-  const toggleDropdown = (name: string) => {
-    setActiveDropdown(activeDropdown === name ? null : name);
-  };
-
-  // Helper function to get profile image URL
-  const getProfileImageUrl = (profilePath?: string) => {
-    if (!profilePath || profilePath === 'string') return undefined;
-    
-    // If it's already a full URL, return as is
-    if (profilePath.startsWith('http://') || profilePath.startsWith('https://')) {
-      return profilePath;
-    }
-    
-    // If it starts with 'images/', use it directly
-    if (profilePath.startsWith('images/')) {
-      return `https://localhost:7112/api/${profilePath}`;
-    }
-    
-    // Otherwise, assume it's just a filename and prepend the images path
-    return `https://localhost:7112/api/images/${profilePath}`;
   };
 
   const isGuest = !user;
@@ -96,297 +69,303 @@ const userProfileData = sessionData ? JSON.parse(sessionData) : null;
   if (isAdminOrDelivery) {
     return (
       <>
-        <header className={"sticky top-0 z-50 border-b w-full flex items-center justify-between px-6 h-16 " + (isDark ? 'bg-[#18181b] text-white border-gray-700' : 'bg-white text-black border-gray-200')}>
-          <div className="flex items-center gap-4">
-            <span className="text-xl font-bold">{isAdmin ? "Admin Dashboard" : "Delivery Dashboard"}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={handleToggleDark} aria-label="Toggle dark mode">
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </Button>
-            <Button variant="ghost" size="icon"><Bell className="w-5 h-5" /></Button>
-            <Button
-              variant="ghost"
-              className="relative h-10 w-10 rounded-full p-0"
-              onClick={() => setProfileDialogOpen(true)}
-            >
-              <Avatar>
-                <AvatarImage 
-                  src={getProfileImageUrl(userProfileData?.userProfile || user.userProfile)}
-                  alt={userProfileData?.userName || user.userName || user.email}
-                />
-                <AvatarFallback style={{ background: "#3b82f6", color: "#fff" }}>
-                  {(userProfileData?.userName || user.userName || user.email || 'U').charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
+        <header className={`sticky top-0 z-50 w-full border-b backdrop-blur-sm ${isDark ? 'bg-zinc-900/95 border-zinc-800' : 'bg-white/95 border-gray-200'}`}>
+          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)' }}>
+                <UtensilsCrossed className="w-5 h-5 text-white" />
+              </div>
+              <span className="hidden sm:inline-block text-lg font-bold" style={{ background: 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                {isAdmin ? "Admin Panel" : "Delivery Panel"}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleToggleDark}
+                className="hover:bg-gray-100 dark:hover:bg-zinc-800"
+              >
+                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="hover:bg-gray-100 dark:hover:bg-zinc-800 relative"
+              >
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-10 w-10 rounded-full p-0 hover:opacity-80"
+                onClick={() => setProfileDialogOpen(true)}
+              >
+                <Avatar className="h-9 w-9 ring-2 ring-amber-400">
+                  <AvatarImage 
+                    src={getProfileImageUrl(userProfileData?.userProfile || user.userProfile)}
+                    alt={userProfileData?.userName || user.userName || user.email}
+                  />
+                  <AvatarFallback className="bg-linear-to-br from-amber-400 to-orange-500 text-white font-semibold">
+                    {(userProfileData?.userName || user.userName || user.email || 'U').charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </div>
           </div>
         </header>
         
-        {/* Profile Dialog */}
-        <ProfileDialog
-          open={profileDialogOpen}
-          onOpenChange={setProfileDialogOpen}
-          user={userProfileData || user}
-          onLogout={handleLogout}
-        />
+        {user && (
+          <ProfileDialog
+            open={profileDialogOpen}
+            onOpenChange={setProfileDialogOpen}
+            user={userProfileData || user}
+            onLogout={handleLogout}
+          />
+        )}
       </>
     );
   }
 
   // Guest/User header
   return (
-    <header className={"sticky top-0 z-50 border-b bg-white text-black"}>
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-4 md:px-8 h-16 relative">
-        {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black">
-            <UtensilsCrossed className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-xl font-bold text-black">SmartBite</span>
-        </Link>
+    <>
+      <header className="sticky top-0 z-50 w-full border-b backdrop-blur-md shadow-sm" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)' }}>
+        <div className="w-full">
+          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2 shrink-0">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg hover:scale-105 transition-transform" style={{ background: 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)' }}>
+                <UtensilsCrossed className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold hidden sm:block" style={{ background: 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                SmartBite
+              </span>
+            </Link>
 
-        {/* Right actions: mobile hamburger, desktop nav */}
-        <div className="flex items-center gap-4">
-          {/* Hamburger for mobile */}
-          <div className="md:hidden flex items-center">
-            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu">
-                <line x1="4" y1="8" x2="20" y2="8" />
-                <line x1="4" y1="16" x2="20" y2="16" />
-              </svg>
-            </Button>
-          </div>
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-8">
+              <Link to={isGuest ? "/" : "/user"} className="text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
+                Home
+              </Link>
+              <Link to={isGuest ? "/about" : "/user/about"} className="text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
+                About
+              </Link>
+              <Link to={isGuest ? "/menu" : "/user/menu"} className="text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
+                Menu
+              </Link>
+              <Link to={isGuest ? "/contact" : "/user/contact"} className="text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
+                Contact
+              </Link>
+            </nav>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-          {(isGuest || isUser) && (
-            <>
-              <Link to="/" className="hover:text-primary">Home</Link>
-
-              <button onMouseEnter={() => setActiveDropdown("about")} onMouseLeave={() => setActiveDropdown(null)}
-                className="flex items-center hover:text-primary relative">
-                About <ChevronDown className="ml-1 w-4 h-4" />
-                {activeDropdown === "about" && (
-                  <div className="absolute top-full left-0 w-[300px] h-[20vh] bg-white border rounded shadow-lg p-4 z-50">
-                    <p className="text-gray-700 text-sm">
-                      SmartBite is an innovative food ordering and delivery system that connects
-                      customers with their favorite restaurants. Fast, reliable, and convenient!
-                    </p>
-                  </div>
-                )}
-              </button>
-
-              <button onMouseEnter={() => setActiveDropdown("menu")} onMouseLeave={() => setActiveDropdown(null)}
-                className="flex items-center hover:text-primary relative">
-                Menu <ChevronDown className="ml-1 w-4 h-4" />
-                {activeDropdown === "menu" && (
-                  <div className="absolute top-full left-0 w-[300px] h-[20vh] bg-white border rounded shadow-lg p-4 z-50">
-                    <p className="text-gray-700 text-sm">
-                      Explore our menu: Local favorites and global cuisines. Order with ease from SmartBite!
-                    </p>
-                  </div>
-                )}
-              </button>
-
-              <button onMouseEnter={() => setActiveDropdown("contact")} onMouseLeave={() => setActiveDropdown(null)}
-                className="flex items-center hover:text-primary relative">
-                Contact <ChevronDown className="ml-1 w-4 h-4" />
-                {activeDropdown === "contact" && (
-                  <div className="absolute top-full left-0 w-[300px] h-[20vh] bg-white border rounded shadow-lg p-4 z-50">
-                    <p className="text-gray-700 text-sm">
-                      Contact SmartBite support at support@smartbite.com or +95 9 123 456 789.
-                    </p>
-                  </div>
-                )}
-              </button>
-
+            {/* Right Section */}
+            <div className="flex items-center gap-2 sm:gap-3">
               {isGuest ? (
                 <>
-                  <Button variant="ghost" onClick={() => navigate("/auth")}>Login</Button>
-                  <Button className="gradient-primary" onClick={() => navigate("/auth?mode=register")}>Sign up</Button>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => navigate("/auth")}
+                    className="hidden sm:flex text-gray-700 hover:text-orange-500"
+                  >
+                    Login
+                  </Button>
+                  <Button 
+                    onClick={() => navigate("/auth?mode=register")}
+                    className="text-white shadow-md"
+                    style={{ background: 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'linear-gradient(120deg, #f59e0b 0%, #d97706 100%)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)'}
+                  >
+                    Sign up
+                  </Button>
                 </>
               ) : (
                 <>
-                  <button type="button" className="hover:text-primary" onClick={onCartClick}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={onCartClick}
+                    className="hidden sm:flex relative hover:bg-orange-50 hover:text-orange-500"
+                  >
                     <ShoppingCart className="w-5 h-5" />
-                  </button>
-                  <button type="button" className="hover:text-primary" onClick={onFavoriteClick}>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={onFavoriteClick}
+                    className="hidden md:flex hover:bg-orange-50 hover:text-orange-500"
+                  >
                     <Heart className="w-5 h-5" />
-                  </button>
-                  <button type="button" className="hover:text-primary" onClick={onOrderHistoryClick}>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={onOrderHistoryClick}
+                    className="hidden md:flex hover:bg-orange-50 hover:text-orange-500"
+                  >
                     <Package className="w-5 h-5" />
-                  </button>
+                  </Button>
                   <Button
                     variant="ghost"
-                    className="relative h-10 w-10 rounded-full p-0"
+                    className="h-10 w-10 rounded-full p-0 hover:opacity-80"
                     onClick={() => setProfileDialogOpen(true)}
                   >
-                    <Avatar>
+                    <Avatar className="h-9 w-9 ring-2" style={{ borderColor: '#fbbf24' }}>
                       <AvatarImage 
                         src={getProfileImageUrl(userProfileData?.userProfile || user.userProfile)}
                         alt={userProfileData?.userName || user.userName || user.email}
                       />
-                      {/* <AvatarFallback style={{ background: "#f97316", color: "#fff" }}>
-                        {(user.userName || user.email).charAt(0).toUpperCase()}
-                      </AvatarFallback> */}
+                      <AvatarFallback className="text-white font-semibold" style={{ background: 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)' }}>
+                        {(userProfileData?.userName || user.userName || user.email || 'U').charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </>
               )}
-            </>
-          )}
-        </nav>
-      </div>
-    </div>
 
-      {/* Mobile Dropdown */}
-      {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b shadow-lg z-50">
-          <nav className="flex flex-col p-4 text-sm font-medium max-h-[calc(100vh-4rem)] overflow-y-auto">
-            <Link 
-              to="/" 
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-3 px-4 hover:bg-gray-100 rounded-md transition-colors"
-            >
-              Home
-            </Link>
-            
-            <button 
-              onClick={() => toggleDropdown("about")} 
-              className="py-3 px-4 text-left hover:bg-gray-100 rounded-md transition-colors flex items-center justify-between"
-            >
-              About
-              <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === "about" ? "rotate-180" : ""}`} />
-            </button>
-            {activeDropdown === "about" && (
-              <div className="px-4 py-3 bg-gray-50 rounded-md mb-2 mx-2">
-                <p className="text-gray-700 text-xs">
-                  SmartBite is an innovative food ordering and delivery system connecting customers with favorite restaurants.
-                </p>
-              </div>
-            )}
-            
-            <button 
-              onClick={() => toggleDropdown("menu")} 
-              className="py-3 px-4 text-left hover:bg-gray-100 rounded-md transition-colors flex items-center justify-between"
-            >
-              Menu
-              <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === "menu" ? "rotate-180" : ""}`} />
-            </button>
-            {activeDropdown === "menu" && (
-              <div className="px-4 py-3 bg-gray-50 rounded-md mb-2 mx-2">
-                <p className="text-gray-700 text-xs">
-                  Discover our menu: local favorites and international dishes, easily order from SmartBite!
-                </p>
-              </div>
-            )}
-            
-            <button 
-              onClick={() => toggleDropdown("contact")} 
-              className="py-3 px-4 text-left hover:bg-gray-100 rounded-md transition-colors flex items-center justify-between"
-            >
-              Contact
-              <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === "contact" ? "rotate-180" : ""}`} />
-            </button>
-            {activeDropdown === "contact" && (
-              <div className="px-4 py-3 bg-gray-50 rounded-md mb-2 mx-2">
-                <p className="text-gray-700 text-xs">
-                  Contact support at support@smartbite.com or call +95 9 123 456 789.
-                </p>
-              </div>
-            )}
-
-            <div className="border-t border-gray-200 my-2"></div>
-
-            {isGuest ? (
-              <div className="space-y-2 mt-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }}
-                >
-                  Login
-                </Button>
-                <Button 
-                  className="w-full gradient-primary" 
-                  onClick={() => { navigate("/auth?mode=register"); setMobileMenuOpen(false); }}
-                >
-                  Sign up
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2 mt-2">
-                {/* Profile Section */}
-                <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg mb-2">
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setProfileDialogOpen(true);
-                    }}
-                    className="flex items-center gap-3 flex-1"
-                  >
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage 
-                        src={getProfileImageUrl(userProfileData?.userProfile || user.userProfile)}
-                        alt={userProfileData?.userName || user.userName || user.email}
-                      />
-                      {/* <AvatarFallback style={{ background: "#f97316", color: "#fff" }}>
-                        {(user.userName || user.email).charAt(0).toUpperCase()}
-                      </AvatarFallback> */}
-                    </Avatar>
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{userProfileData?.userName || user.userName || user.email}</p>
-                      <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Menu Items */}
-                <button 
-                  type="button" 
-                  onClick={() => { setMobileMenuOpen(false); onCartClick?.(); }}
-                  className="w-full py-3 px-4 text-left hover:bg-gray-100 rounded-md transition-colors flex items-center gap-3"
-                >
-                  <ShoppingCart className="w-5 h-5 text-orange-500" />
-                  <span>Cart</span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => { setMobileMenuOpen(false); onFavoriteClick?.(); }}
-                  className="w-full py-3 px-4 text-left hover:bg-gray-100 rounded-md transition-colors flex items-center gap-3"
-                >
-                  <Heart className="w-5 h-5 text-orange-500" />
-                  <span>Favorites</span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => { setMobileMenuOpen(false); onOrderHistoryClick?.(); }}
-                  className="w-full py-3 px-4 text-left hover:bg-gray-100 rounded-md transition-colors flex items-center gap-3"
-                >
-                  <Package className="w-5 h-5 text-orange-500" />
-                  <span>Order History</span>
-                </button>
-                
-                <div className="border-t border-gray-200 my-2"></div>
-                
-                <Button 
-                  variant="ghost" 
-                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                  className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
-              </div>
-            )}
-          </nav>
+              {/* Mobile Menu Button */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="lg:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </Button>
+            </div>
+          </div>
         </div>
-      )}
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t bg-white">
+            <nav className="flex flex-col px-4 py-3 max-h-[calc(100vh-4rem)] overflow-y-auto">
+              <Link 
+                to={isGuest ? "/" : "/user"} 
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 px-4 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors"
+              >
+                Home
+              </Link>
+              <Link 
+                to={isGuest ? "/about" : "/user/about"} 
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 px-4 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors"
+              >
+                About
+              </Link>
+              <Link 
+                to={isGuest ? "/menu" : "/user/menu"} 
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 px-4 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors"
+              >
+                Menu
+              </Link>
+              <Link 
+                to={isGuest ? "/contact" : "/user/contact"} 
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 px-4 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors"
+              >
+                Contact
+              </Link>
+
+              {isUser && (
+                <>
+                  <div className="border-t border-gray-200 my-3"></div>
+                  
+                  <div className="px-4 py-3 rounded-lg mb-3" style={{ background: 'linear-gradient(120deg, #fef3c7 0%, #fde68a 100%)' }}>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setProfileDialogOpen(true);
+                      }}
+                      className="flex items-center gap-3 w-full"
+                    >
+                      <Avatar className="h-12 w-12 ring-2" style={{ borderColor: '#fbbf24' }}>
+                        <AvatarImage 
+                          src={getProfileImageUrl(userProfileData?.userProfile || user.userProfile)}
+                          alt={userProfileData?.userName || user.userName || user.email}
+                        />
+                        <AvatarFallback className="text-white font-semibold" style={{ background: 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)' }}>
+                          {(userProfileData?.userName || user.userName || user.email || 'U').charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {userProfileData?.userName || user.userName || user.email}
+                        </p>
+                        <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  <button 
+                    type="button" 
+                    onClick={() => { setMobileMenuOpen(false); onCartClick?.(); }}
+                    className="w-full py-3 px-4 text-left text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors flex items-center gap-3"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    <span>Cart</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setMobileMenuOpen(false); onFavoriteClick?.(); }}
+                    className="w-full py-3 px-4 text-left text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors flex items-center gap-3"
+                  >
+                    <Heart className="w-5 h-5" />
+                    <span>Favorites</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setMobileMenuOpen(false); onOrderHistoryClick?.(); }}
+                    className="w-full py-3 px-4 text-left text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors flex items-center gap-3"
+                  >
+                    <Package className="w-5 h-5" />
+                    <span>Order History</span>
+                  </button>
+                  
+                  <div className="border-t border-gray-200 my-3"></div>
+                  
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                    className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+                </>
+              )}
+
+              {isGuest && (
+                <>
+                  <div className="border-t border-gray-200 my-3"></div>
+                  <div className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }}
+                    >
+                      Login
+                    </Button>
+                    <Button 
+                      className="w-full text-white"
+                      style={{ background: 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)' }}
+                      onClick={() => { navigate("/auth?mode=register"); setMobileMenuOpen(false); }}
+                    >
+                      Sign up
+                    </Button>
+                  </div>
+                </>
+              )}
+            </nav>
+          </div>
+        )}
+      </header>
       
-      {/* Profile Dialog for Users */}
-      {isUser && (
+      {user && (
         <ProfileDialog
           open={profileDialogOpen}
           onOpenChange={setProfileDialogOpen}
@@ -394,7 +373,7 @@ const userProfileData = sessionData ? JSON.parse(sessionData) : null;
           onLogout={handleLogout}
         />
       )}
-    </header>
+    </>
   );
 };
 

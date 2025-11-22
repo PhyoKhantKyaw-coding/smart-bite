@@ -226,7 +226,7 @@ const Home = () => {
 
   return (
     <>
-      <div className="min-h-screen">
+      <div className="p-9" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)' }}>
         <HeroSection searchQuery={searchQuery} onSearchChange={setSearchQuery} />
         <section className="py-4 bg-muted/30 w-full rounded-2xl border-b">
           <div className="container">

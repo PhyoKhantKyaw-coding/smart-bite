@@ -124,17 +124,33 @@ layer(base);
 	* {
 		@apply border-border;
 	}
-		body {
-			@apply bg-background text-foreground;
-		}
-		.dark {
-			color: #fff !important;
-			background: #18181b !important;
-		}
-		:root {
-			color: #222 !important;
-			background: #fff !important;
-		}
+
+	html, body {
+		width: 100%;
+		min-height: 100vh;
+		margin: 0;
+		padding: 0;
+	}
+
+	body {
+		@apply bg-background text-foreground;
+	}
+
+	.dark {
+		color: #fff !important;
+		background: #18181b !important;
+	}
+
+	:root {
+		color: #222 !important;
+		background: #fff !important;
+	}
+
+	#root {
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+	}
 
 	h1,
 	h2,

@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { getFoodImageUrl } from '@/lib/imageUtils';
 
 interface FoodTableProps {
   foods: GetFoodDTO[];
@@ -150,7 +151,7 @@ const FoodTable = ({ foods, onEdit, onDelete, isLoading }: FoodTableProps) => {
                   <div className="w-20 h-20 rounded-xl overflow-hidden border-2" style={{ borderColor: isDark ? '#3f3f46' : '#e5e7eb' }}>
                     {food.foodImage ? (
                       <img
-                        src={`https://localhost:7112/api/${food.foodImage}`}
+                        src={getFoodImageUrl(food.foodImage)}
                         alt={food.name || 'Food'}
                         className="w-full h-full object-cover"
                         onError={(e) => {

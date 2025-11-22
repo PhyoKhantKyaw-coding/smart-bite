@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import TrackingMapDialog from "./TrackingMapDialog";
 import { Map } from "lucide-react";
+import { getFoodImageUrl } from "@/lib/imageUtils";
 
 interface OrderHistoryDialogProps {
   open: boolean;
@@ -260,7 +261,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                                 className="flex gap-2 sm:gap-3 p-2 bg-gray-50 rounded-lg"
                               >
                                 <img
-                                  src={item.foodImage ? `https://localhost:7112/api/${item.foodImage}` : '/placeholder-food.jpg'}
+                                  src={getFoodImageUrl(item.foodImage)}
                                   alt={item.name}
                                   className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded shrink-0"
                                 />

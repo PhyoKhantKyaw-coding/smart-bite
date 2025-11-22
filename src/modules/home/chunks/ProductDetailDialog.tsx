@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { getFoodById } from '@/api/user';
 import type { ResponseFoodDTO } from '@/api/user/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getFoodImageUrl } from '@/lib/imageUtils';
 
 interface ProductDetailDialogProps {
   open: boolean;
@@ -111,7 +112,7 @@ const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
           {food.foodImage && (
             <div className="relative w-full h-64 md:h-96 rounded-lg overflow-hidden bg-gray-100">
               <img
-                src={food.foodImage ? `https://localhost:7112/api/${food.foodImage}` : '/placeholder-food.jpg'}
+                src={getFoodImageUrl(food.foodImage)}
                 alt={food.name}
                 className="w-full h-full object-cover"
               />

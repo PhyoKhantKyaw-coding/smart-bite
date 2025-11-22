@@ -13,6 +13,7 @@ import { Loader2, Upload, X, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import type { GetFoodDTO } from '@/api/user/types';
 import { getAllCategories, addCategory } from '@/api/food';
+import { getFoodImageUrl } from '@/lib/imageUtils';
 
 interface AddEditFoodDialogProps {
   open: boolean;
@@ -62,7 +63,7 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
         catId: category?.catId || '',
       });
       if (food.foodImage) {
-        setImagePreview(`https://localhost:7112/api/${food.foodImage}`);
+        setImagePreview(getFoodImageUrl(food.foodImage));
       }
       setOtherTopics(food.othertopicName && food.othertopicName.length > 0 ? food.othertopicName : ['']);
     } else {
@@ -194,7 +195,7 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: isDark ? '#27272a' : '#fff', color: isDark ? '#fff' : '#000' }}>
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+          <DialogTitle className="text-2xl font-bold bg-linear-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
             {food ? 'Edit Food' : 'Add New Food'}
           </DialogTitle>
           <DialogDescription style={{ color: isDark ? '#a1a1aa' : '#6b7280' }}>
@@ -374,7 +375,7 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
                 value={formData.foodDescription}
                 onChange={(e) => setFormData({ ...formData, foodDescription: e.target.value })}
                 placeholder="Food description..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 min-h-[80px]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 min-h-20"
                 style={{ backgroundColor: isDark ? '#3f3f46' : '#fff', color: isDark ? '#fff' : '#000' }}
               />
             </div>
@@ -425,7 +426,7 @@ const AddEditFoodDialog = ({ open, onOpenChange, food, onSave, isLoading }: AddE
             </Button>
             <Button
               type="submit"
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+              className="bg-linear-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
               disabled={isLoading}
             >
               {isLoading ? (

@@ -7,17 +7,19 @@ const DefaultLayoutContent = () => {
   const { setShowCartDialog, setShowFavoriteDialog, setShowOrderHistoryDialog } = useDialogContext();
 
   return (
-    <>
+    <div className=" h-full flex flex-col">
       <Header 
         onCartClick={() => setShowCartDialog(true)}
         onFavoriteClick={() => setShowFavoriteDialog(true)}
         onOrderHistoryClick={() => setShowOrderHistoryDialog(true)}
       />
-      <main className='font-display px-2 py-4 md:px-8 md:py-8 max-w-7xl mx-auto w-full'>
-        <Outlet />
+      <main className="">
+        <div className="">
+          <Outlet />
+        </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 };
 
