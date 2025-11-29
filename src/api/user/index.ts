@@ -69,8 +69,18 @@ export const addToCart = async (data: AddCartDTO): Promise<ResponseDTO<boolean>>
   return response.data;
 };
 
+export const updateCart = async (data: AddCartDTO): Promise<ResponseDTO<boolean>> => {
+  const response = await axios.put('/cart', data);
+  return response.data;
+};
+
 export const getCart = async (): Promise<ResponseDTO<GetCartDTO[]>> => {
   const response = await axios.get('/cart');
+  return response.data;
+};
+
+export const removeFromCart = async (foodId: string): Promise<ResponseDTO<boolean>> => {
+  const response = await axios.delete(`/cart/${foodId}`);
   return response.data;
 };
 

@@ -1,10 +1,3 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +16,6 @@ interface FavoriteDialogProps {
 
 const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
   open,
-  onOpenChange,
   favoriteItems,
   onRemoveFavorite,
   onAddToCart,
@@ -33,34 +25,46 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
     toast.success(`${name} added to cart!`);
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl sm:text-2xl flex items-center gap-2">
-            <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 fill-red-500" />
+    <div className="relative w-[80%] mx-auto overflow-hidden text-yellow-900 border-4 border-yellow-400 shadow-lg rounded-[48px]" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)', minHeight: '500px', maxHeight: '600px' }}>
+      <div className="container max-w-5xl mx-auto h-full overflow-y-auto scrollbar-hide py-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <style>{`
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linear-to-br from-red-400 to-pink-500 shadow-lg mb-4 animate-pulse">
+            <Heart className="w-8 h-8 text-white fill-white" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-red-600 to-pink-600 bg-clip-text text-transparent mb-2">
             My Favorites
-          </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
-            Your favorite foods collection
-          </DialogDescription>
-        </DialogHeader>
+          </h1>
+          <p className="text-sm sm:text-base text-yellow-800 opacity-80">
+            Your handpicked collection of delicious dishes
+          </p>
+        </div>
 
         <div className="space-y-3 sm:space-y-4">
           {favoriteItems.length === 0 ? (
-            <div className="text-center py-12">
-              <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No favorites yet</h3>
-              <p className="text-muted-foreground">
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-red-100 to-pink-200 mb-6">
+                <Heart className="w-12 h-12 text-red-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-700 mb-3">No favorites yet</h3>
+              <p className="text-gray-500 text-lg">
                 Start adding your favorite dishes!
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {favoriteItems.map((item) => (
                 <Card
                   key={item.foodId}
-                  className="overflow-hidden hover:shadow-lg transition-shadow"
+                  className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-yellow-300 bg-white/95 backdrop-blur-sm hover:scale-105 hover:-rotate-1"
                 >
                   <div className="relative">
                     <img
@@ -107,8 +111,8 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };
 

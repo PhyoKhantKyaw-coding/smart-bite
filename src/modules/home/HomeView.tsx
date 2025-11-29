@@ -137,9 +137,9 @@ const Home = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const handleUpdateCartQuantity = (foodId: string, quantity: number) => {
-    setCartItems(cartItems.map((item) => item.foodId === foodId ? { ...item, quantity } : item));
-  };
+  // const handleUpdateCartQuantity = (foodId: string, quantity: number) => {
+  //   setCartItems(cartItems.map((item) => item.foodId === foodId ? { ...item, quantity } : item));
+  // };
 
   const handleRemoveCartItem = (foodId: string) => {
     setCartItems(cartItems.filter((item) => item.foodId !== foodId));
@@ -177,7 +177,7 @@ const Home = () => {
             await addToCartAPI({ 
               foodId: item.foodId, 
               quantity: item.quantity || 1, 
-              topics: item.topics?.map(t => ({ topicId: t.topicId, topicName: t.topicName })) || [] 
+              topics: [] 
             });
           }
         }
@@ -227,7 +227,37 @@ const Home = () => {
   return (
     <>
       <div className="p-9" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)' }}>
-        <HeroSection searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        {/* Show cart, favorites, or order history pages in place of hero section */}
+        {showCartDialog ? (
+          <CartDialog 
+            open={showCartDialog} 
+            onOpenChange={setShowCartDialog} 
+            cartItems={cartItems} 
+            onRemoveItem={handleRemoveCartItem} 
+            onProceedToOrder={handleProceedToOrder} 
+            onRefreshCart={fetchCart} 
+          />
+        ) : showFavoriteDialog ? (
+          <FavoriteDialog 
+            open={showFavoriteDialog} 
+            onOpenChange={setShowFavoriteDialog} 
+            favoriteItems={favoriteItems} 
+            onRemoveFavorite={handleRemoveFavorite} 
+            onAddToCart={handleAddToCartFromFavorite} 
+          />
+        ) : showOrderHistoryDialog ? (
+          <OrderHistoryDialog 
+            open={showOrderHistoryDialog} 
+            onOpenChange={setShowOrderHistoryDialog} 
+            orders={orderHistory} 
+            onReorder={handleReorder} 
+            onRefresh={handleRefreshOrders} 
+          />
+        ) : (
+          <HeroSection searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        )}
+
+        {/* Categories and food grid - always visible */}
         <section className="py-4 bg-muted/30 w-full rounded-2xl border-b">
           <div className="container">
             <div className="flex gap-3 ml-2 overflow-x-auto scrollbar-hide pb-2">
@@ -258,10 +288,9 @@ const Home = () => {
           </div>
         </section>
       </div>
-      {selectedFoodId && (<ProductDetailDialog open={showProductDetail} onOpenChange={setShowProductDetail} foodId={selectedFoodId} onAddToCart={handleAddToCart} onAddToFavorite={handleToggleFavorite} />)}
-      <CartDialog open={showCartDialog} onOpenChange={setShowCartDialog} cartItems={cartItems} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveCartItem} onProceedToOrder={handleProceedToOrder} />
-      <FavoriteDialog open={showFavoriteDialog} onOpenChange={setShowFavoriteDialog} favoriteItems={favoriteItems} onRemoveFavorite={handleRemoveFavorite} onAddToCart={handleAddToCartFromFavorite} />
-      <OrderHistoryDialog open={showOrderHistoryDialog} onOpenChange={setShowOrderHistoryDialog} orders={orderHistory} onReorder={handleReorder} onRefresh={handleRefreshOrders} />
+
+      {/* Product detail dialog can show over everything */}
+      {selectedFoodId && (<ProductDetailDialog open={showProductDetail} onOpenChange={setShowProductDetail} foodId={selectedFoodId} onAddToFavorite={handleToggleFavorite} onRefreshCart={fetchCart} />)}
     </>
   );
 };

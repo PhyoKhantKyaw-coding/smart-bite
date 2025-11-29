@@ -9,9 +9,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Heart, Clock, DollarSign } from 'lucide-react';
+import { ShoppingCart, Heart, Clock, DollarSign, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { getFoodById } from '@/api/user';
+import { getFoodById, addToCart as addToCartAPI } from '@/api/user';
 import type { ResponseFoodDTO } from '@/api/user/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getFoodImageUrl } from '@/lib/imageUtils';
@@ -20,20 +20,22 @@ interface ProductDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   foodId: string;
-  onAddToCart: (foodId: string) => void;
+  onAddToCart?: (foodId: string) => void;
   onAddToFavorite: (foodId: string) => void;
+  onRefreshCart?: () => void;
 }
 
 const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
   open,
   onOpenChange,
   foodId,
-  onAddToCart,
   onAddToFavorite,
+  onRefreshCart,
 }) => {
   const [product, setProduct] = useState<ResponseFoodDTO | null>(null);
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [selectedTopics, setSelectedTopics] = useState<Array<{ topicId?: string; topicName?: string }>>([]);
 
   const fetchProductDetails = async () => {
     setLoading(true);
@@ -41,6 +43,8 @@ const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
       const response = await getFoodById(foodId);
       if (response.data) {
         setProduct(response.data);
+        setSelectedTopics([]);
+        setQuantity(1);
       } else {
         toast.error('Product not found');
         onOpenChange(false);
@@ -60,9 +64,29 @@ const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, foodId]);
 
-  const handleAddToCart = () => {
-    onAddToCart(foodId);
-    toast.success(`Added ${quantity} item(s) to cart!`);
+  const toggleTopic = (topic: { topicId?: string; topicName?: string }) => {
+    const isSelected = selectedTopics.some((t) => t.topicId === topic.topicId);
+    if (isSelected) {
+      setSelectedTopics(selectedTopics.filter((t) => t.topicId !== topic.topicId));
+    } else {
+      setSelectedTopics([...selectedTopics, topic]);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    try {
+      await addToCartAPI({
+        foodId,
+        quantity,
+        topics: selectedTopics.map(t => ({ otherId: t.topicId })),
+      });
+      toast.success(`Added ${quantity} item(s) to cart!`);
+      onRefreshCart?.();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart');
+    }
   };
 
   const handleAddToFavorite = () => {
@@ -141,30 +165,26 @@ const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
             <p className="text-gray-600">{food.foodDescription || 'No description available'}</p>
           </div>
 
-          {/* Topics/Tags */}
+          {/* Additional Options */}
           {product.otherTopics && product.otherTopics.length > 0 && (
             <div>
-              <h3 className="font-semibold text-lg mb-2">Additional Options</h3>
-              <div className="flex flex-wrap gap-2">
-                {product.otherTopics.map((topic, index) => (
-                  <Badge key={index} variant="outline">
-                    {topic.topicName}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Topics from othertopicName */}
-          {food.othertopicName && food.othertopicName.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                {food.othertopicName.map((topic, index) => (
-                  <Badge key={index} variant="secondary">
-                    {topic}
-                  </Badge>
-                ))}
+              <h3 className="font-semibold text-lg mb-3">Additional Options (Optional)</h3>
+              <div className="space-y-2">
+                {product.otherTopics.map((topic) => {
+                  const topicData = { topicId: topic.otherId, topicName: topic.otherName };
+                  const isSelected = selectedTopics.some((t) => t.topicId === topic.otherId);
+                  return (
+                    <Button
+                      key={topic.otherId}
+                      variant={isSelected ? "default" : "outline"}
+                      className={`w-full justify-between ${isSelected ? "gradient-primary" : ""}`}
+                      onClick={() => toggleTopic(topicData)}
+                    >
+                      <span>{topic.otherName}</span>
+                      {isSelected && <Check className="w-4 h-4" />}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
           )}

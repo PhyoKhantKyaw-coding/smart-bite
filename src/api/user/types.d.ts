@@ -45,8 +45,7 @@ export interface AddRoleDTO {
 }
 
 export interface TopicDTO {
-  topicId?: string;
-  topicName?: string;
+  otherId?: string;
 }
 
 export interface AddCartDTO {
@@ -138,7 +137,7 @@ export interface FoodWithTopicsDTO {
 
 export interface ResponseFoodDTO {
   foodDTO?: GetFoodDTO;
-  otherTopics?: OtherTopicModel[];
+  otherTopics?: OtherTopicDTO[];
 }
 
 export interface GetAllDto {

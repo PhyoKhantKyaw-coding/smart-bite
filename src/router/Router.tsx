@@ -7,7 +7,6 @@ import HomeView from "@/modules/home/HomeView";
 import AboutView from "@/modules/about/AboutView";
 import ContactView from "@/modules/contact/ContactView";
 import LoginView from "@/modules/auth/LoginView";
-import DashboardView from "@/modules/admin/dashboard/DashboardView";
 import DashboardV2View from "@/modules/admin/dashboard-v2/DashboardV2View";
 import FoodManagementView from "@/modules/admin/food-management/FoodManagementView";
 import UserManagementView from "@/modules/admin/user-management/UserView";
@@ -82,8 +81,7 @@ const router = createBrowserRouter([
       ),
       children: [
         { path: "", element: <DashboardV2View /> },
-        { path: "dashboard", element: <DashboardView /> },
-        { path: "dashboard-v2", element: <DashboardV2View /> },
+        { path: "dashboard", element: <DashboardV2View /> },
         { path: "foods", element: <FoodManagementView /> },
         { path: "stores", element: <StoreManagementView /> },
         { path: "deliveries", element: <DeliveryManagementView /> },

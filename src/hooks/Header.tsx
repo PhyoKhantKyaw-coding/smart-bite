@@ -15,6 +15,7 @@ interface HeaderProps {
   onCartClick?: () => void;
   onFavoriteClick?: () => void;
   onOrderHistoryClick?: () => void;
+  onHomeClick?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -23,6 +24,7 @@ const Header: React.FC<HeaderProps> = ({
   onCartClick,
   onFavoriteClick,
   onOrderHistoryClick,
+  onHomeClick,
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -146,7 +148,7 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-8">
-              <Link to={isGuest ? "/" : "/user"} className="text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
+              <Link to={isGuest ? "/" : "/user"} onClick={onHomeClick} className="text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
                 Home
               </Link>
               <Link to={isGuest ? "/about" : "/user/about"} className="text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
@@ -244,7 +246,7 @@ const Header: React.FC<HeaderProps> = ({
             <nav className="flex flex-col px-4 py-3 max-h-[calc(100vh-4rem)] overflow-y-auto">
               <Link 
                 to={isGuest ? "/" : "/user"} 
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() => { setMobileMenuOpen(false); onHomeClick?.(); }}
                 className="py-3 px-4 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-500 rounded-lg transition-colors"
               >
                 Home

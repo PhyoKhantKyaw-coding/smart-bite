@@ -1,11 +1,4 @@
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +30,6 @@ interface OrderHistoryDialogProps {
 
 const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
   open,
-  onOpenChange,
   orders,
   onReorder,
   onRefresh,
@@ -111,30 +103,42 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
 
   const statusOptions = ["All", "Pending", "Preparing", "Delivering", "Delivered", "Cancelled"];
 
+  if (!open) return null;
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[95vw] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-5xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl sm:text-2xl flex items-center gap-2">
-              <History className="w-5 h-5 sm:w-6 sm:h-6" />
-              Order History
+      <div className="relative w-[80%] mx-auto overflow-hidden text-yellow-900 border-4 border-yellow-400 shadow-lg rounded-[48px] flex flex-col" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)', minHeight: '500px', maxHeight: '600px' }}>
+        <div className="container max-w-5xl mx-auto flex-1 overflow-y-auto scrollbar-hide py-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`
+            .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linear-to-br from-purple-400 to-blue-500 shadow-lg mb-4">
+              <History className="w-8 h-8 text-white" />
+            </div>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                Order History
+              </h1>
               {onRefresh && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleManualRefresh}
                   disabled={isRefreshing}
-                  className="ml-auto h-8 w-8"
+                  className="h-10 w-10 hover:bg-white/50 rounded-full"
                 >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-5 h-5 text-purple-600 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </Button>
               )}
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              View and track your past orders {onRefresh && '• Auto-updates every 10s'}
-            </DialogDescription>
-          </DialogHeader>
+            </div>
+            <p className="text-sm sm:text-base text-yellow-800 opacity-80">
+              Track your orders and reorder your favorites {onRefresh && '• Auto-updates every 10s'}
+            </p>
+          </div>
 
           <div className="space-y-3 sm:space-y-4">
             {/* Filter Tabs */}
@@ -155,10 +159,12 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
             {/* Orders List */}
             <div className="space-y-3">
               {filteredOrders.length === 0 ? (
-                <div className="text-center py-12">
-                  <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No orders found</h3>
-                  <p className="text-muted-foreground">
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-purple-100 to-blue-200 mb-6">
+                    <Package className="w-12 h-12 text-purple-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-700 mb-3">No orders found</h3>
+                  <p className="text-gray-500 text-lg">
                     {filterStatus === "All"
                       ? "You haven't placed any orders yet"
                       : `No ${filterStatus.toLowerCase()} orders`}
@@ -168,7 +174,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                 filteredOrders.map((order) => (
                   <Card
                     key={order.orderId}
-                    className="overflow-hidden hover:shadow-lg transition-shadow"
+                    className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-yellow-300 bg-white/95 backdrop-blur-sm hover:scale-[1.01]"
                   >
                     <div className="bg-linear-to-r from-orange-50 to-pink-50 p-3 sm:p-4">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -299,7 +305,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
 
                       <Separator className="my-3" />
 
-                      {/* Footer */}
+                      {/* Footer - Show total and track button */}
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div>
                           <p className="text-xs sm:text-sm text-muted-foreground">Total Amount</p>
@@ -321,14 +327,6 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                               Track Order
                             </Button>
                           )}
-                          <Button
-                            className="gradient-primary flex-1 sm:flex-initial"
-                            size="sm"
-                            onClick={() => order.orderId && onReorder?.(order.orderId)}
-                          >
-                            <Package className="w-4 h-4 mr-2" />
-                            Reorder
-                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -337,8 +335,29 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
             )}
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+
+        {/* Fixed Footer with Reorder */}
+        {filteredOrders.length > 0 && filteredOrders[0] && (
+          <div className="border-t border-yellow-400 bg-linear-to-r from-yellow-50 to-yellow-100 p-4">
+            <div className="container max-w-5xl mx-auto">
+              <Button
+                className="w-full gradient-primary text-base py-5"
+                size="lg"
+                onClick={() => {
+                  const latestOrder = filteredOrders[0];
+                  if (latestOrder.orderId) {
+                    onReorder?.(latestOrder.orderId);
+                  }
+                }}
+              >
+                <Package className="w-5 h-5 mr-2" />
+                Reorder Latest
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {trackingOrderId && (
         <TrackingMapDialog

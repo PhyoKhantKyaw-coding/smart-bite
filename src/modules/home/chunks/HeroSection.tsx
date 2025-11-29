@@ -10,7 +10,7 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
   const heroHeading = "Delicious Food,\nDelivered Fast";
 
   return (
-    <section className="relative w-full overflow-hidden text-yellow-900 py-20 px-4 border-4 border-yellow-400 shadow-lg" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)' }}>
+    <section className="relative w-[80%] mx-auto overflow-hidden text-yellow-900 py-20 px-4 border-4 border-yellow-400 shadow-lg rounded-[48px]" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)' }}>
       {/* Map illustration background */}
       <svg className="absolute inset-0 w-full h-full z-0" viewBox="0 0 1200 400" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
         <rect x="0" y="0" width="1200" height="400" rx="48" fill="#fef9c3" />
@@ -52,7 +52,7 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
           transformOrigin: 'center',
           filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2)'
         }}>
-          🚴‍♂️
+          🚴
         </div>
 
         {/* Return journey with delivery box */}
@@ -62,18 +62,16 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
           animation: 'deliveryReturn 8s ease-in-out infinite',
           animationDelay: '4s',
           transformOrigin: 'center',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
-          transform: 'scaleX(-1)'
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2)'
         }}>
-          🚴‍♂️
+          🚴
           {/* Delivery box appears on return journey */}
           <span style={{ 
             position: 'absolute', 
             top: -8, 
-            left: -12, 
+            right: -12, 
             fontSize: 20,
-            animation: 'boxBounce 0.5s ease-in-out infinite',
-            transform: 'scaleX(-1)'
+            animation: 'boxBounce 0.5s ease-in-out infinite'
           }}>📦</span>
         </div>
 
@@ -138,48 +136,48 @@ const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
             0% { 
               left: 1120px; top: 100px; 
               opacity: 0; 
-              transform: scaleX(-1) scale(0.5);
+              transform: scale(0.5) scaleX(-1);
             }
             5% { 
               opacity: 1; 
-              transform: scaleX(-1) scale(1);
+              transform: scale(1) scaleX(-1);
             }
             15% { 
               left: 1000px; top: 180px; 
-              transform: scaleX(-1) rotate(10deg) scale(0.95);
+              transform: rotate(10deg) scale(0.95) scaleX(-1);
             }
             30% { 
               left: 860px; top: 320px; 
-              transform: scaleX(-1) rotate(-5deg) scale(1);
+              transform: rotate(-5deg) scale(1) scaleX(-1);
             }
             45% { 
               left: 680px; top: 240px; 
-              transform: scaleX(-1) rotate(20deg) scale(0.9);
+              transform: rotate(20deg) scale(0.9) scaleX(-1);
             }
             58% { 
               left: 500px; top: 360px; 
-              transform: scaleX(-1) rotate(-10deg) scale(1.02);
+              transform: rotate(-10deg) scale(1.02) scaleX(-1);
             }
             70% { 
               left: 320px; top: 280px; 
-              transform: scaleX(-1) rotate(15deg) scale(0.95);
+              transform: rotate(15deg) scale(0.95) scaleX(-1);
             }
             82% { 
               left: 200px; top: 340px; 
-              transform: scaleX(-1) rotate(5deg) scale(1);
+              transform: rotate(5deg) scale(1) scaleX(-1);
             }
             92% { 
               left: 80px; top: 360px; 
-              transform: scaleX(-1) rotate(0deg) scale(1);
+              transform: rotate(0deg) scale(1) scaleX(-1);
             }
             98% { 
               opacity: 1; 
-              transform: scaleX(-1) scale(0.8);
+              transform: scale(0.8) scaleX(-1);
             }
             100% { 
               left: 80px; top: 360px; 
               opacity: 0; 
-              transform: scaleX(-1) scale(0.5);
+              transform: scale(0.5) scaleX(-1);
             }
           }
 

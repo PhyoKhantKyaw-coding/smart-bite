@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -16,20 +16,32 @@ import CategoryChart from "./chunks/CategoryChart";
 import SalesOverview from "./chunks/SalesOverview";
 import TopProducts from "./chunks/TopProducts";
 import RecentActivity from "./chunks/RecentActivity";
-
-const mockStats = {
-  totalRevenue: 125000000,
-  revenueChange: 12.5,
-  totalOrders: 8450,
-  ordersChange: -3.2,
-  totalCustomers: 4200,
-  customersChange: 8.1,
-  avgOrderValue: 14793,
-  avgChange: 5.4,
-};
+import { getDashboardStats } from "@/api/dashboard";
+import type { DashboardStatsDTO } from "@/api/dashboard/types";
 
 const DashboardV2View = () => {
   const [timeRange, setTimeRange] = useState<"today" | "week" | "month" | "year">("week");
+  const [stats, setStats] = useState<DashboardStatsDTO>({
+    totalRevenue: 125000000,
+    totalOrders: 8450,
+    totalUsers: 4200,
+    avgOrderValue: 14793,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await getDashboardStats({ period: timeRange });
+        if (response.data) {
+          setStats(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, [timeRange]);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50  p-4 sm:p-6 lg:p-8">
@@ -63,10 +75,10 @@ const DashboardV2View = () => {
               <DollarSign className="w-5 h-5 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockStats.totalRevenue.toLocaleString()} Ks</div>
+              <div className="text-2xl font-bold">{(stats.totalRevenue || 0).toLocaleString()} Ks</div>
               <div className="flex items-center gap-1 text-xs mt-1">
                 <TrendingUp className="w-3 h-3 text-green-500" />
-                <span className="text-green-500 font-medium">+{mockStats.revenueChange}%</span>
+                <span className="text-green-500 font-medium">+12.5%</span>
                 <span className="text-muted-foreground">from last {timeRange}</span>
               </div>
             </CardContent>
@@ -78,10 +90,10 @@ const DashboardV2View = () => {
               <ShoppingCart className="w-5 h-5 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockStats.totalOrders.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{(stats.totalOrders || 0).toLocaleString()}</div>
               <div className="flex items-center gap-1 text-xs mt-1">
                 <TrendingDown className="w-3 h-3 text-red-500" />
-                <span className="text-red-500 font-medium">{mockStats.ordersChange}%</span>
+                <span className="text-red-500 font-medium">-3.2%</span>
                 <span className="text-muted-foreground">from last {timeRange}</span>
               </div>
             </CardContent>
@@ -93,10 +105,10 @@ const DashboardV2View = () => {
               <Users className="w-5 h-5 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockStats.totalCustomers.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{(stats.totalUsers || 0).toLocaleString()}</div>
               <div className="flex items-center gap-1 text-xs mt-1">
                 <TrendingUp className="w-3 h-3 text-green-500" />
-                <span className="text-green-500 font-medium">+{mockStats.customersChange}%</span>
+                <span className="text-green-500 font-medium">+8.1%</span>
                 <span className="text-muted-foreground">from last {timeRange}</span>
               </div>
             </CardContent>
@@ -108,10 +120,10 @@ const DashboardV2View = () => {
               <Package className="w-5 h-5 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockStats.avgOrderValue.toLocaleString()} Ks</div>
+              <div className="text-2xl font-bold">{(stats.avgOrderValue || 0).toLocaleString()} Ks</div>
               <div className="flex items-center gap-1 text-xs mt-1">
                 <TrendingUp className="w-3 h-3 text-green-500" />
-                <span className="text-green-500 font-medium">+{mockStats.avgChange}%</span>
+                <span className="text-green-500 font-medium">+5.4%</span>
                 <span className="text-muted-foreground">from last {timeRange}</span>
               </div>
             </CardContent>
@@ -121,11 +133,11 @@ const DashboardV2View = () => {
         {/* Main Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <RevenueChart timeRange={timeRange} />
-            <OrdersChart />
+            <RevenueChart key={`revenue-${timeRange}`} timeRange={timeRange} />
+            <OrdersChart key="orders-chart" />
           </div>
           <div className="space-y-6">
-            <CategoryChart />
+            <CategoryChart key="category-chart" />
             <SalesOverview />
           </div>
         </div>

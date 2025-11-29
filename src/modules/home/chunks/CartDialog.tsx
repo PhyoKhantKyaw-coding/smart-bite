@@ -1,19 +1,14 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Plus, Minus, Trash2, ShoppingCart, Package } from "lucide-react";
-import type { GetCartDTO } from "@/api/user/types";
+import { Trash2, ShoppingCart, Package, Edit } from "lucide-react";
+import type { GetCartDTO, OtherTopicModel } from "@/api/user/types";
 import { useState } from "react";
 import AddOrderDialog from "./AddOrderDialog";
+import EditCartItemDialog from "./EditCartItemDialog";
 import { getFoodImageUrl } from "@/lib/imageUtils";
+import { updateCart, removeFromCart } from "@/api/user";
+import { toast } from "sonner";
 
 interface CartDialogProps {
   open: boolean;
@@ -22,27 +17,52 @@ interface CartDialogProps {
   onUpdateQuantity?: (foodId: string, quantity: number) => void;
   onRemoveItem?: (foodId: string) => void;
   onProceedToOrder?: () => void;
+  onRefreshCart?: () => void;
 }
 
 const CartDialog: React.FC<CartDialogProps> = ({
   open,
-  onOpenChange,
   cartItems,
-  onUpdateQuantity,
   onRemoveItem,
   onProceedToOrder,
+  onRefreshCart,
 }) => {
   const [showAddOrderDialog, setShowAddOrderDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingItem, setEditingItem] = useState<GetCartDTO | null>(null);
 
-  const handleQuantityChange = (foodId: string, increment: boolean) => {
-    const item = cartItems.find((i) => i.foodId === foodId);
-    if (!item || !item.quantity) return;
+  if (!open) return null;
 
-    const newQuantity = increment
-      ? Math.min(item.quantity + 1, 99)
-      : Math.max(item.quantity - 1, 1);
+  const handleEditItem = (item: GetCartDTO) => {
+    setEditingItem(item);
+    setShowEditDialog(true);
+  };
 
-    onUpdateQuantity?.(foodId, newQuantity);
+  const handleSaveEdit = async (foodId: string, quantity: number, selectedTopics: OtherTopicModel[]) => {
+    try {
+      await updateCart({
+        foodId,
+        quantity,
+        topics: selectedTopics.map(t => ({ otherId: t.topicId })),
+      });
+      toast.success("Cart item updated successfully!");
+      onRefreshCart?.();
+    } catch (error) {
+      console.error('Error updating cart:', error);
+      toast.error("Failed to update cart item");
+    }
+  };
+
+  const handleRemoveItem = async (foodId: string) => {
+    try {
+      await removeFromCart(foodId);
+      toast.success("Item removed from cart");
+      onRemoveItem?.(foodId);
+      onRefreshCart?.();
+    } catch (error) {
+      console.error('Error removing item:', error);
+      toast.error("Failed to remove item");
+    }
   };
 
   const calculateTotal = () => {
@@ -52,37 +72,46 @@ const CartDialog: React.FC<CartDialogProps> = ({
   const totalAmount = calculateTotal();
 
   const handleProceedToOrder = () => {
-    onOpenChange(false);
     setShowAddOrderDialog(true);
   };
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[95vw] sm:w-[85%] md:w-[75%] lg:w-[60%] max-w-4xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl sm:text-2xl flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
+      <div className="relative w-[80%] mx-auto overflow-hidden text-yellow-900 border-4 border-yellow-400 shadow-lg rounded-[48px] flex flex-col" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)', minHeight: '500px', maxHeight: '600px' }}>
+        <div className="container max-w-4xl mx-auto flex-1 overflow-y-auto scrollbar-hide py-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`
+            .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linear-to-br from-orange-400 to-pink-500 shadow-lg mb-4">
+              <ShoppingCart className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-2">
               Shopping Cart
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Review and manage your cart items
-            </DialogDescription>
-          </DialogHeader>
+            </h1>
+            <p className="text-sm sm:text-base text-yellow-800 opacity-80">
+              Review and manage your delicious selections
+            </p>
+          </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 pb-4">
             {cartItems.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
-                <p className="text-muted-foreground">Add some delicious items to get started!</p>
+              <div className="text-center py-16">
+                <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-gray-100 to-gray-200 mb-6">
+                  <Package className="w-12 h-12 text-gray-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-700 mb-3">Your cart is empty</h3>
+                <p className="text-gray-500 text-lg">Add some delicious items to get started!</p>
               </div>
             ) : (
               <>
                 {/* Cart Items */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {cartItems.map((item) => (
-                    <Card key={item.foodId} className="overflow-hidden hover:shadow-md transition-shadow">
+                    <Card key={item.foodId} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-yellow-300 bg-white/95 backdrop-blur-sm hover:scale-[1.02]">
                       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4">
                         <img
                           src={getFoodImageUrl(item.foodImage)}
@@ -97,14 +126,24 @@ const CartDialog: React.FC<CartDialogProps> = ({
                                 {item.catName}
                               </Badge>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => item.foodId && onRemoveItem?.(item.foodId)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEditItem(item)}
+                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 h-8 w-8"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => item.foodId && handleRemoveItem(item.foodId)}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
 
                           {item.topics && item.topics.length > 0 && (
@@ -119,27 +158,10 @@ const CartDialog: React.FC<CartDialogProps> = ({
 
                           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 rounded-full"
-                                onClick={() => item.foodId && handleQuantityChange(item.foodId, false)}
-                                disabled={(item.quantity || 0) <= 1}
-                              >
-                                <Minus className="w-3 h-3" />
-                              </Button>
-                              <span className="w-12 text-center font-semibold">
+                              <span className="text-sm text-muted-foreground">Quantity:</span>
+                              <span className="font-semibold text-base">
                                 {item.quantity || 0}
                               </span>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 rounded-full"
-                                onClick={() => item.foodId && handleQuantityChange(item.foodId, true)}
-                                disabled={(item.quantity || 0) >= 99}
-                              >
-                                <Plus className="w-3 h-3" />
-                              </Button>
                             </div>
                             <div className="text-left sm:text-right">
                               <p className="text-xs sm:text-sm text-muted-foreground">
@@ -155,32 +177,33 @@ const CartDialog: React.FC<CartDialogProps> = ({
                     </Card>
                   ))}
                 </div>
-
-                <Separator />
-
-                {/* Total and Checkout */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-base sm:text-lg">
-                    <span className="font-semibold">Total Amount</span>
-                    <span className="text-xl sm:text-2xl font-bold text-primary">
-                      {totalAmount.toLocaleString()} MMK
-                    </span>
-                  </div>
-
-                  <Button
-                    onClick={handleProceedToOrder}
-                    className="w-full gradient-primary text-lg py-6"
-                    disabled={cartItems.length === 0}
-                  >
-                    <ShoppingCart className="w-5 h-5 mr-2" />
-                    Proceed to Order
-                  </Button>
-                </div>
               </>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+
+        {/* Fixed Footer */}
+        {cartItems.length > 0 && (
+          <div className="border-t border-yellow-400 bg-linear-to-r from-yellow-50 to-yellow-100 p-3">
+            <div className="container max-w-4xl mx-auto">
+              <div className="flex items-center justify-between text-sm sm:text-base mb-2">
+                <span className="font-semibold">Total Amount</span>
+                <span className="text-lg sm:text-xl font-bold text-primary">
+                  {totalAmount.toLocaleString()} MMK
+                </span>
+              </div>
+              <Button
+                onClick={handleProceedToOrder}
+                className="w-full gradient-primary text-base py-4"
+                disabled={cartItems.length === 0}
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Proceed to Order
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <AddOrderDialog
         open={showAddOrderDialog}
@@ -188,6 +211,15 @@ const CartDialog: React.FC<CartDialogProps> = ({
         cartItems={cartItems}
         onOrderSuccess={onProceedToOrder}
       />
+
+      {editingItem && (
+        <EditCartItemDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          cartItem={editingItem}
+          onSave={handleSaveEdit}
+        />
+      )}
     </>
   );
 };
