@@ -135,7 +135,7 @@ const Header: React.FC<HeaderProps> = ({
     <>
       <header className="sticky top-0 z-50 w-full border-b backdrop-blur-md shadow-sm" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)' }}>
         <div className="w-full">
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 ">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 shrink-0">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg hover:scale-105 transition-transform" style={{ background: 'linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%)' }}>

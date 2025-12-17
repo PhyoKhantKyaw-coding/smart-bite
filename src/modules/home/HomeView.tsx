@@ -15,6 +15,14 @@ import { getAllFoods, getAllCategories, addToCart as addToCartAPI, addToFavorite
 import { getMyOrders } from "@/api/delivery";
 import type { GetFoodDTO, CategoryDTO, GetCartDTO, GetFavoriteDTO } from "@/api/user/types";
 
+interface OrderDTO {
+  orderId: string;
+  cartDTOs?: Array<{
+    foodId?: string;
+    quantity?: number;
+  }>;
+}
+
 const Home = () => {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -29,15 +37,24 @@ const Home = () => {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const { showCartDialog, setShowCartDialog, showFavoriteDialog, setShowFavoriteDialog, showOrderHistoryDialog, setShowOrderHistoryDialog } = useDialogContext();
 
-  // Use real API for order history
-  const { data: ordersResponse, refetch: refetchOrders } = getMyOrders.useQuery({
-    enabled: !!user && user.role === 'user',
-  });
+  const [orderHistory, setOrderHistory] = useState<OrderDTO[]>([]);
 
-  const orderHistory = ordersResponse?.data || [];
+  const fetchOrders = useCallback(async () => {
+    if (!user || user.role !== 'user') return;
+    
+    try {
+      const response = await getMyOrders();
+      if (response && response.data) {
+        const ordersData = Array.isArray(response.data) ? response.data as unknown as OrderDTO[] : [];
+        setOrderHistory(ordersData);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  }, [user]);
 
   const handleRefreshOrders = async () => {
-    await refetchOrders();
+    await fetchOrders();
   };
 
   const fetchFoods = useCallback(async () => {
@@ -125,11 +142,12 @@ const Home = () => {
     fetchCategories();
   }, [fetchFoods, fetchCategories]);
 
-  // Fetch cart and favorites only when user changes
+  // Fetch cart, favorites, and orders when user changes
   useEffect(() => {
     fetchCart();
     fetchFavorites();
-  }, [fetchCart, fetchFavorites]);
+    fetchOrders();
+  }, [fetchCart, fetchFavorites, fetchOrders]);
 
   const filteredFoods = foods.filter((food) => {
     const matchesCategory = !selectedCategory || food.catName === selectedCategory;
@@ -169,7 +187,7 @@ const Home = () => {
 
   const handleReorder = async (orderId: string) => {
     try {
-      const order = orderHistory.find((o) => o.orderId === orderId);
+      const order = orderHistory.find((o: OrderDTO) => o.orderId === orderId);
       if (order && order.cartDTOs) {
         // Add all items from the order back to cart
         for (const item of order.cartDTOs) {

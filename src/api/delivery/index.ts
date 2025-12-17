@@ -1,85 +1,88 @@
-import { useMutation, useQuery, UseMutationOptions, UseQueryOptions } from '@tanstack/react-query';
-import axios from 'axios';
+import axios from '@/configs/axios';
+import type {
+  AddDeliveryDTO,
+  UpdateDeliveryDTO,
+  GetDeliveryDTO,
+  GetAllDeliveriesDTO,
+  PaginatedDeliveryResult,
+  RealTimeOrderTrackingDTO,
+} from './types.d';
+
+interface ResponseDTO<T> {
+  status: number;
+  message?: string;
+  data?: T;
+}
+
+// ============ Delivery Management ============
+
+// Add Delivery Person
+export async function addDelivery(data: AddDeliveryDTO): Promise<ResponseDTO<null>> {
+  const response = await axios.post('/api/Delivery/delivery/add', data);
+  return response.data;
+}
+
+// Update Delivery Person
+export async function updateDelivery(data: UpdateDeliveryDTO): Promise<ResponseDTO<null>> {
+  const response = await axios.put('/api/Delivery/delivery/update', data);
+  return response.data;
+}
+
+// Get All Deliveries with Pagination
+export async function getAllDeliveries(params: GetAllDeliveriesDTO): Promise<ResponseDTO<PaginatedDeliveryResult>> {
+  const response = await axios.get('/api/Delivery/delivery/all', { params });
+  return response.data;
+}
+
+// Delete Delivery Person
+export async function deleteDelivery(deliveryId: string): Promise<ResponseDTO<null>> {
+  const response = await axios.delete(`/api/Delivery/delivery/delete/${deliveryId}`);
+  return response.data;
+}
+
+// Get Delivery by ID
+export async function getDeliveryById(deliveryId: string): Promise<ResponseDTO<GetDeliveryDTO>> {
+  const response = await axios.get(`/api/Delivery/delivery/${deliveryId}`);
+  return response.data;
+}
+
+// ============ Order Tracking (Existing) ============
 
 // Add Order
-export const addOrder = {
-  useMutation: (opt?: Partial<UseMutationOptions<ResponseDTO<OrderDTO>, Error, AddOrderDTO>>) => {
-    return useMutation<ResponseDTO<OrderDTO>, Error, AddOrderDTO>({
-      mutationFn: async (orderData) => {
-        const request = await axios.post(`/api/Delivery/add`, orderData);
-        return request.data;
-      },
-      ...opt
-    });
-  }
-};
+export async function addOrder(orderData: Record<string, unknown>): Promise<ResponseDTO<Record<string, unknown>>> {
+  const response = await axios.post('/api/Delivery/add', orderData);
+  return response.data;
+}
 
 // Get My Orders
-export const getMyOrders = {
-  useQuery: (opt?: Partial<UseQueryOptions<ResponseDTO<VoucherDTO[]>, Error>>) => {
-    return useQuery<ResponseDTO<VoucherDTO[]>, Error>({
-      queryKey: ['myOrders'],
-      queryFn: async () => {
-        const request = await axios.get(`/api/Delivery/my-orders`);
-        return request.data;
-      },
-      ...opt
-    });
-  }
-};
+export async function getMyOrders(): Promise<ResponseDTO<Record<string, unknown>[]>> {
+  const response = await axios.get('/api/Delivery/my-orders');
+  return response.data;
+}
 
 // Get Orders by Status
-export const getOrdersByStatus = (status: string) => ({
-  useQuery: (opt?: Partial<UseQueryOptions<ResponseDTO<VoucherDTO[]>, Error>>) => {
-    return useQuery<ResponseDTO<VoucherDTO[]>, Error>({
-      queryKey: ['ordersByStatus', status],
-      queryFn: async () => {
-        const request = await axios.get(`/api/Delivery/status/${status}`);
-        return request.data;
-      },
-      ...opt
-    });
-  }
-});
+export async function getOrdersByStatus(status: string): Promise<ResponseDTO<Record<string, unknown>[]>> {
+  const response = await axios.get(`/api/Delivery/status/${status}`);
+  return response.data;
+}
 
 // Get Voucher by OrderId
-export const getVoucher = (orderId: string) => ({
-  useQuery: (opt?: Partial<UseQueryOptions<ResponseDTO<VoucherDTO>, Error>>) => {
-    return useQuery<ResponseDTO<VoucherDTO>, Error>({
-      queryKey: ['voucher', orderId],
-      queryFn: async () => {
-        const request = await axios.get(`/api/Delivery/voucher/${orderId}`);
-        return request.data;
-      },
-      ...opt
-    });
-  }
-});
+export async function getVoucher(orderId: string): Promise<ResponseDTO<Record<string, unknown>>> {
+  const response = await axios.get(`/api/Delivery/voucher/${orderId}`);
+  return response.data;
+}
 
 // Update Tracking
-export const updateTracking = {
-  useMutation: (opt?: Partial<UseMutationOptions<ResponseDTO<DeliveryTrackingModel>, Error, DeliveryTrackingModel>>) => {
-    return useMutation<ResponseDTO<DeliveryTrackingModel>, Error, DeliveryTrackingModel>({
-      mutationFn: async (trackingData) => {
-        const request = await axios.post(`/api/Delivery/update-tracking`, trackingData);
-        return request.data;
-      },
-      ...opt
-    });
-  }
-};
+export async function updateTracking(trackingData: Record<string, unknown>): Promise<ResponseDTO<Record<string, unknown>>> {
+  const response = await axios.post('/api/Delivery/update-tracking', trackingData);
+  return response.data;
+}
 
 // Get Real-Time Tracking
-export const getTracking = (orderId: string) => ({
-  useQuery: (opt?: Partial<UseQueryOptions<ResponseDTO<RealTimeOrderTrackingDTO>, Error>>) => {
-    return useQuery<ResponseDTO<RealTimeOrderTrackingDTO>, Error>({
-      queryKey: ['tracking', orderId],
-      queryFn: async () => {
-        const request = await axios.get(`/api/Delivery/tracking/${orderId}`);
-        return request.data;
-      },
-      refetchInterval: 5000, // Auto-refetch every 5 seconds for real-time tracking
-      ...opt
-    });
-  }
-});
+export async function getTracking(orderId: string): Promise<ResponseDTO<RealTimeOrderTrackingDTO>> {
+  const response = await axios.get(`/api/Delivery/tracking/${orderId}`);
+  return response.data;
+}
+
+// Export all types for convenience
+export * from './types.d';

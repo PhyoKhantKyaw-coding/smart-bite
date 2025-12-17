@@ -12,6 +12,8 @@ import FoodManagementView from "@/modules/admin/food-management/FoodManagementVi
 import UserManagementView from "@/modules/admin/user-management/UserView";
 import StoreManagementView from "@/modules/admin/store-management/StoreManagementView";
 import DeliveryManagementView from "@/modules/admin/delivery-management/DeliveryManagementView";
+import OrderManagementView from "@/modules/admin/order-management/OrderManagementView";
+import DeliveryDashboardView from "@/modules/delivery/DeliveryDashboardView";
 
 import { useAuth } from "@/hooks/UseAuth";
 import React, { ReactNode } from "react";
@@ -83,6 +85,7 @@ const router = createBrowserRouter([
         { path: "", element: <DashboardV2View /> },
         { path: "dashboard", element: <DashboardV2View /> },
         { path: "foods", element: <FoodManagementView /> },
+        { path: "orders", element: <OrderManagementView /> },
         { path: "stores", element: <StoreManagementView /> },
         { path: "deliveries", element: <DeliveryManagementView /> },
         { path: "users", element: <UserManagementView /> }
@@ -95,7 +98,10 @@ const router = createBrowserRouter([
           <DeliveryLayout />
         </ProtectedRoute>
       ),
-      children: [{ path: "", element: <HomeView /> }],
+      children: [
+        { path: "", element: <DeliveryDashboardView /> },
+        { path: "dashboard", element: <DeliveryDashboardView /> }
+      ],
     },
   ]);
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,115 +9,109 @@ import {
   MapPin,
   Package,
 } from "lucide-react";
+import { toast } from "sonner";
 import AddEditDeliveryDialog from "./chunks/AddEditDeliveryDialog";
 import DeliveryMapView from "./chunks/DeliveryMapView";
-import DeliveryStatsCards from "./chunks/DeliveryStatsCards";
-import DeliveryPerformanceChart from "./chunks/DeliveryPerformanceChart";
+// import DeliveryStatsCards from "./chunks/DeliveryStatsCards";
+// import DeliveryPerformanceChart from "./chunks/DeliveryPerformanceChart";
 import DeliveryTable from "./chunks/DeliveryTable";
+import { getAllDeliveries, deleteDelivery } from "@/api/delivery";
 
-// Mock Data
-const mockDeliveryPersons = [
-  {
-    id: "DLV001",
-    name: "Aung Aung",
-    phone: "+95 9123456789",
-    email: "aung@delivery.com",
-    vehicleType: "Motorcycle",
-    vehicleNumber: "1A-2345",
-    status: "Active",
-    isOnline: true,
-    currentLocation: { lat: 16.8661, lng: 96.1951 },
-    rating: 4.8,
-    totalDeliveries: 1250,
-    completedToday: 12,
-    earnings: 45000,
-    joinedDate: "2024-01-15",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aung",
-  },
-  {
-    id: "DLV002",
-    name: "Kyaw Kyaw",
-    phone: "+95 9234567890",
-    email: "kyaw@delivery.com",
-    vehicleType: "Bicycle",
-    vehicleNumber: "2B-3456",
-    status: "Active",
-    isOnline: true,
-    currentLocation: { lat: 16.8701, lng: 96.1991 },
-    rating: 4.6,
-    totalDeliveries: 980,
-    completedToday: 8,
-    earnings: 38000,
-    joinedDate: "2024-02-20",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kyaw",
-  },
-  {
-    id: "DLV003",
-    name: "Zaw Zaw",
-    phone: "+95 9345678901",
-    email: "zaw@delivery.com",
-    vehicleType: "Motorcycle",
-    vehicleNumber: "3C-4567",
-    status: "Active",
-    isOnline: false,
-    currentLocation: { lat: 16.8621, lng: 96.1911 },
-    rating: 4.9,
-    totalDeliveries: 1450,
-    completedToday: 15,
-    earnings: 52000,
-    joinedDate: "2023-11-10",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zaw",
-  },
-  {
-    id: "DLV004",
-    name: "Myo Myo",
-    phone: "+95 9456789012",
-    email: "myo@delivery.com",
-    vehicleType: "Car",
-    vehicleNumber: "4D-5678",
-    status: "Active",
-    isOnline: true,
-    currentLocation: { lat: 16.8641, lng: 96.1931 },
-    rating: 4.7,
-    totalDeliveries: 1100,
-    completedToday: 10,
-    earnings: 42000,
-    joinedDate: "2024-03-05",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Myo",
-  },
-  {
-    id: "DLV005",
-    name: "Hla Hla",
-    phone: "+95 9567890123",
-    email: "hla@delivery.com",
-    vehicleType: "Motorcycle",
-    vehicleNumber: "5E-6789",
-    status: "Inactive",
-    isOnline: false,
-    currentLocation: { lat: 16.8681, lng: 96.1971 },
-    rating: 4.5,
-    totalDeliveries: 750,
-    completedToday: 0,
-    earnings: 28000,
-    joinedDate: "2024-04-12",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Hla",
-  },
-];
+interface DeliveryPerson {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  townId?: string;
+  townName?: string;
+  vehicleType: string;
+  vehicleNumber: string;
+  status: string;
+  isOnline: boolean;
+  currentLocation: { lat: number; lng: number };
+  rating: number;
+  totalDeliveries: number;
+  completedToday: number;
+  earnings: number;
+  joinedDate: string;
+  avatar: string;
+}
 
 const DeliveryManagementView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [selectedDelivery, setSelectedDelivery] = useState<typeof mockDeliveryPersons[0] | null>(null);
+  const [selectedDelivery, setSelectedDelivery] = useState<DeliveryPerson | null>(null);
   const [viewMode, setViewMode] = useState<"table" | "map">("table");
-  const [deliveryPersons, setDeliveryPersons] = useState(mockDeliveryPersons);
+  const [deliveryPersons, setDeliveryPersons] = useState<DeliveryPerson[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
-  const handleEdit = (delivery: typeof mockDeliveryPersons[0]) => {
+  const fetchDeliveries = async () => {
+    try {
+      const response = await getAllDeliveries({
+        page,
+        pageSize,
+        query: searchQuery,
+      });
+      
+      if (response.data?.data) {
+        const mappedData: DeliveryPerson[] = response.data.data.map((d) => ({
+          id: d.deliveryId || "",
+          name: d.deliveryName || "",
+          phone: d.phNo || "",
+          email: d.email || "",
+          townId: d.townId || "",
+          townName: d.townName || "",
+          vehicleType: "Bicycle",
+          vehicleNumber: "N/A",
+          status: d.isOnline ? "Active" : "Inactive",
+          isOnline: d.isOnline || false,
+          currentLocation: {
+            lat: d.currentLatitude || 16.8661,
+            lng: d.currentLongitude || 96.1951,
+          },
+          rating: 5.0,
+          totalDeliveries: 0,
+          completedToday: 0,
+          earnings: 0,
+          joinedDate: new Date().toISOString().split("T")[0],
+          avatar: d.profile || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.deliveryName}`,
+        }));
+        setDeliveryPersons(mappedData);
+        setTotalCount(response.data.totalCount || 0);
+        setTotalPages(response.data.totalPages || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch deliveries:", error);
+      toast.error("Failed to load delivery personnel");
+    }
+  };
+
+  useEffect(() => {
+    fetchDeliveries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, searchQuery]);
+
+  const handleEdit = (delivery: DeliveryPerson) => {
     setSelectedDelivery(delivery);
     setShowAddDialog(true);
   };
 
-  const handleDelete = (id: string) => {
-    setDeliveryPersons((prev) => prev.filter((d) => d.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await deleteDelivery(id);
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Delivery person deleted successfully");
+        fetchDeliveries();
+      } else {
+        toast.error(response.message || "Failed to delete delivery person");
+      }
+    } catch (error) {
+      console.error("Failed to delete delivery:", error);
+      toast.error("Failed to delete delivery person");
+    }
   };
 
   const handleAdd = () => {
@@ -125,20 +119,16 @@ const DeliveryManagementView = () => {
     setShowAddDialog(true);
   };
 
-  const filteredDeliveryPersons = deliveryPersons.filter((delivery) =>
-    delivery.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    delivery.phone.includes(searchQuery) ||
-    delivery.vehicleNumber.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredDeliveryPersons = deliveryPersons;
 
-  const stats = {
-    totalDeliveries: deliveryPersons.length,
-    activeDeliveries: deliveryPersons.filter((d) => d.status === "Active").length,
-    onlineNow: deliveryPersons.filter((d) => d.isOnline).length,
-    totalEarnings: deliveryPersons.reduce((sum, d) => sum + d.earnings, 0),
-    todayDeliveries: deliveryPersons.reduce((sum, d) => sum + d.completedToday, 0),
-    avgRating: (deliveryPersons.reduce((sum, d) => sum + d.rating, 0) / deliveryPersons.length).toFixed(1),
-  };
+  // const stats = {
+  //   totalDeliveries: totalCount,
+  //   activeDeliveries: deliveryPersons.filter((d) => d.status === "Active").length,
+  //   onlineNow: deliveryPersons.filter((d) => d.isOnline).length,
+  //   totalEarnings: deliveryPersons.reduce((sum, d) => sum + (d.earnings || 0), 0),
+  //   todayDeliveries: deliveryPersons.reduce((sum, d) => sum + (d.completedToday || 0), 0),
+  //   avgRating: deliveryPersons.length > 0 ? (deliveryPersons.reduce((sum, d) => sum + (d.rating || 0), 0) / deliveryPersons.length).toFixed(1) : "0",
+  // };
 
   return (
     <div className="min-h-screen  p-4 sm:p-6 lg:p-8">
@@ -176,10 +166,10 @@ const DeliveryManagementView = () => {
         </div>
 
         {/* Stats Cards */}
-        <DeliveryStatsCards stats={stats} />
+        {/* <DeliveryStatsCards stats={stats} /> */}
 
         {/* Performance Chart */}
-        <DeliveryPerformanceChart />
+        {/* <DeliveryPerformanceChart /> */}
 
         {/* Search and Actions */}
         <Card>
@@ -207,11 +197,62 @@ const DeliveryManagementView = () => {
           </CardHeader>
           <CardContent>
             {viewMode === "table" ? (
-              <DeliveryTable
-                deliveryPersons={filteredDeliveryPersons}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
+              <>
+                <DeliveryTable
+                  deliveryPersons={filteredDeliveryPersons}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {deliveryPersons.length > 0 ? ((page - 1) * pageSize) + 1 : 0} to {Math.min(page * pageSize, totalCount)} of {totalCount} results
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(Math.max(1, page - 1))}
+                      disabled={page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNumber;
+                        if (totalPages <= 5) {
+                          pageNumber = i + 1;
+                        } else if (page <= 3) {
+                          pageNumber = i + 1;
+                        } else if (page >= totalPages - 2) {
+                          pageNumber = totalPages - 4 + i;
+                        } else {
+                          pageNumber = page - 2 + i;
+                        }
+                        return (
+                          <Button
+                            key={pageNumber}
+                            variant={page === pageNumber ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setPage(pageNumber)}
+                            className={page === pageNumber ? "gradient-primary" : ""}
+                          >
+                            {pageNumber}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(Math.min(totalPages, page + 1))}
+                      disabled={page === totalPages || totalPages === 0}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </>
             ) : (
               <DeliveryMapView deliveryPersons={filteredDeliveryPersons} />
             )}
@@ -223,28 +264,7 @@ const DeliveryManagementView = () => {
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
           delivery={selectedDelivery}
-          onSave={(data) => {
-            if (selectedDelivery) {
-              setDeliveryPersons((prev) =>
-                prev.map((d) => (d.id === selectedDelivery.id ? { ...d, ...data } : d))
-              );
-            } else {
-              setDeliveryPersons((prev) => [
-                ...prev,
-                {
-                  ...data,
-                  id: `DLV${String(prev.length + 1).padStart(3, "0")}`,
-                  totalDeliveries: 0,
-                  completedToday: 0,
-                  earnings: 0,
-                  rating: 5.0,
-                  currentLocation: { lat: 16.8661, lng: 96.1951 },
-                  avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.name}`,
-                },
-              ]);
-            }
-            setShowAddDialog(false);
-          }}
+          onSave={fetchDeliveries}
         />
       </div>
     </div>
