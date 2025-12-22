@@ -15,6 +15,7 @@ import {
   CreditCard,
   Clock,
   RefreshCw,
+  X,
 } from "lucide-react";
 import TrackingMapDialog from "./TrackingMapDialog";
 import { Map } from "lucide-react";
@@ -30,8 +31,8 @@ interface OrderHistoryDialogProps {
 
 const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
   open,
+  onOpenChange,
   orders,
-  onReorder,
   onRefresh,
 }) => {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
@@ -107,75 +108,86 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
 
   return (
     <>
-      <div className="relative w-[80%] mx-auto overflow-hidden text-yellow-900 border-4 border-yellow-400 shadow-lg rounded-[48px] flex flex-col" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)', minHeight: '500px', maxHeight: '600px' }}>
-        <div className="container max-w-5xl mx-auto flex-1 overflow-y-auto scrollbar-hide py-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <style>{`
-            .scrollbar-hide::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linear-to-br from-purple-400 to-blue-500 shadow-lg mb-4">
-              <History className="w-8 h-8 text-white" />
-            </div>
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Order History
-              </h1>
-              {onRefresh && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleManualRefresh}
-                  disabled={isRefreshing}
-                  className="h-10 w-10 hover:bg-white/50 rounded-full"
-                >
-                  <RefreshCw className={`w-5 h-5 text-purple-600 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
-              )}
-            </div>
-            <p className="text-sm sm:text-base text-yellow-800 opacity-80">
-              Track your orders and reorder your favorites {onRefresh && '• Auto-updates every 10s'}
-            </p>
-          </div>
-
-          <div className="space-y-3 sm:space-y-4">
-            {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-2">
-              {statusOptions.map((status) => (
-                <Button
-                  key={status}
-                  variant={filterStatus === status ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilterStatus(status)}
-                  className={`text-xs sm:text-sm ${filterStatus === status ? "gradient-primary" : ""}`}
-                >
-                  {status}
-                </Button>
-              ))}
-            </div>
-
-            {/* Orders List */}
-            <div className="space-y-3">
-              {filteredOrders.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-purple-100 to-blue-200 mb-6">
-                    <Package className="w-12 h-12 text-purple-400" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-700 mb-3">No orders found</h3>
-                  <p className="text-gray-500 text-lg">
-                    {filterStatus === "All"
-                      ? "You haven't placed any orders yet"
-                      : `No ${filterStatus.toLowerCase()} orders`}
-                  </p>
-                </div>
-              ) : (
-                filteredOrders.map((order) => (
-                  <Card
-                    key={order.orderId}
-                    className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-yellow-300 bg-white/95 backdrop-blur-sm hover:scale-[1.01]"
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => onOpenChange(false)}>
+        <div className="relative w-full max-w-6xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-purple-200 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          {/* Modern gradient background */}
+          <div className="absolute inset-0 bg-linear-to-br from-purple-50/50 via-white to-blue-50/50 rounded-3xl"></div>
+          
+          <div className="relative flex-1 overflow-y-auto p-6 md:p-8">
+            {/* Close button */}
+            <button
+              onClick={() => onOpenChange(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+            
+            {/* Header */}
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-linear-to-br from-purple-500 to-blue-500 shadow-lg mb-4 transform hover:scale-110 transition-transform">
+                <History className="w-10 h-10 text-white" />
+              </div>
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <h1 className="text-4xl md:text-5xl font-bold bg-linear-to-br from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  Order History
+                </h1>
+                {onRefresh && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshing}
+                    className="h-12 w-12 hover:bg-purple-100 rounded-full"
                   >
+                    <RefreshCw className={`w-6 h-6 text-purple-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                )}
+              </div>
+              <p className="text-base text-gray-600">
+                Track your orders and reorder your favorites {onRefresh && '• Auto-updates every 10s'}
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* Filter Tabs */}
+              <div className="flex flex-wrap gap-3 justify-center">
+                {statusOptions.map((status) => (
+                  <Button
+                    key={status}
+                    variant={filterStatus === status ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilterStatus(status)}
+                    className={`text-sm px-6 py-2 rounded-xl transition-all ${
+                      filterStatus === status 
+                        ? "bg-linear-to-br from-purple-500 to-blue-500 text-white shadow-md" 
+                        : "border-purple-200 hover:border-purple-400"
+                    }`}
+                  >
+                    {status}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Orders List */}
+              <div className="space-y-4">
+                {filteredOrders.length === 0 ? (
+                  <div className="text-center py-20">
+                    <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-linear-to-br from-purple-100 to-blue-200 mb-6 shadow-lg">
+                      <Package className="w-16 h-16 text-purple-400" />
+                    </div>
+                    <h3 className="text-3xl font-bold text-gray-800 mb-4">No orders found</h3>
+                    <p className="text-gray-600 text-lg">
+                      {filterStatus === "All"
+                        ? "You haven't placed any orders yet"
+                        : `No ${filterStatus.toLowerCase()} orders`}
+                    </p>
+                  </div>
+                ) : (
+                  filteredOrders.map((order) => (
+                    <Card
+                      key={order.orderId}
+                      className="overflow-hidden hover:shadow-xl transition-all duration-300 border border-purple-200 bg-white backdrop-blur-sm hover:scale-[1.01] group"
+                    >
                     <div className="bg-linear-to-r from-orange-50 to-pink-50 p-3 sm:p-4">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
@@ -322,6 +334,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                               variant="outline"
                               size="sm"
                               onClick={() => order.orderId && setTrackingOrderId(order.orderId)}
+                              className="border-purple-300 hover:bg-purple-50 hover:border-purple-400 rounded-xl"
                             >
                               <Map className="w-4 h-4 mr-2" />
                               Track Order
@@ -331,32 +344,11 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                       </div>
                     </CardContent>
                   </Card>
-                ))
-            )}
+                )))}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Fixed Footer with Reorder */}
-        {filteredOrders.length > 0 && filteredOrders[0] && (
-          <div className="border-t border-yellow-400 bg-linear-to-r from-yellow-50 to-yellow-100 p-4">
-            <div className="container max-w-5xl mx-auto">
-              <Button
-                className="w-full gradient-primary text-base py-5"
-                size="lg"
-                onClick={() => {
-                  const latestOrder = filteredOrders[0];
-                  if (latestOrder.orderId) {
-                    onReorder?.(latestOrder.orderId);
-                  }
-                }}
-              >
-                <Package className="w-5 h-5 mr-2" />
-                Reorder Latest
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
 
       {trackingOrderId && (

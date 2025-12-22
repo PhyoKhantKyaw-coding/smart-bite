@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, ShoppingCart, Package, Edit } from "lucide-react";
+import { Trash2, ShoppingCart, Package, Edit, X } from "lucide-react";
 import type { GetCartDTO, OtherTopicModel } from "@/api/user/types";
 import { useState } from "react";
 import AddOrderDialog from "./AddOrderDialog";
@@ -22,6 +22,7 @@ interface CartDialogProps {
 
 const CartDialog: React.FC<CartDialogProps> = ({
   open,
+  onOpenChange,
   cartItems,
   onRemoveItem,
   onProceedToOrder,
@@ -77,42 +78,49 @@ const CartDialog: React.FC<CartDialogProps> = ({
 
   return (
     <>
-      <div className="relative w-[80%] mx-auto overflow-hidden text-yellow-900 border-4 border-yellow-400 shadow-lg rounded-[48px] flex flex-col" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)', minHeight: '500px', maxHeight: '600px' }}>
-        <div className="container max-w-4xl mx-auto flex-1 overflow-y-auto scrollbar-hide py-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <style>{`
-            .scrollbar-hide::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linear-to-br from-orange-400 to-pink-500 shadow-lg mb-4">
-              <ShoppingCart className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-2">
-              Shopping Cart
-            </h1>
-            <p className="text-sm sm:text-base text-yellow-800 opacity-80">
-              Review and manage your delicious selections
-            </p>
-          </div>
-
-          <div className="space-y-4 pb-4">
-            {cartItems.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-gray-100 to-gray-200 mb-6">
-                  <Package className="w-12 h-12 text-gray-400" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-700 mb-3">Your cart is empty</h3>
-                <p className="text-gray-500 text-lg">Add some delicious items to get started!</p>
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => onOpenChange(false)}>
+        <div className="relative w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-orange-200 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+          {/* Modern gradient background */}
+          <div className="absolute inset-0 bg-linear-to-br from-orange-50/50 via-white to-amber-50/50 rounded-3xl"></div>
+          
+          <div className="relative flex-1 overflow-y-auto p-6 md:p-8">
+            {/* Close button */}
+            <button
+              onClick={() => onOpenChange(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+            
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-linear-to-br from-orange-500 to-amber-500 shadow-lg mb-4 transform hover:scale-110 transition-transform">
+                <ShoppingCart className="w-10 h-10 text-white" />
               </div>
-            ) : (
-              <>
-                {/* Cart Items */}
-                <div className="space-y-4">
-                  {cartItems.map((item) => (
-                    <Card key={item.foodId} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-yellow-300 bg-white/95 backdrop-blur-sm hover:scale-[1.02]">
-                      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4">
+              <h1 className="text-4xl md:text-5xl font-bold bg-linear-to-br from-orange-600 to-amber-600 bg-clip-text text-transparent mb-3">
+                Shopping Cart
+              </h1>
+              <p className="text-base text-gray-600">
+                Review and manage your delicious selections
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {cartItems.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-linear-to-br from-gray-100 to-gray-200 mb-6 shadow-lg">
+                    <Package className="w-16 h-16 text-gray-400" />
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-800 mb-4">Your cart is empty</h3>
+                  <p className="text-gray-600 text-lg">Add some delicious items to get started!</p>
+                </div>
+              ) : (
+                <>
+                  {/* Cart Items */}
+                  <div className="space-y-4">
+                    {cartItems.map((item) => (
+                      <Card key={item.foodId} className="overflow-hidden hover:shadow-xl transition-all duration-300 border border-orange-200 bg-white/90 backdrop-blur-sm hover:scale-[1.01] group">
+                        <div className="flex flex-col sm:flex-row gap-4 p-4">
                         <img
                           src={getFoodImageUrl(item.foodImage)}
                           alt={item.name}
@@ -182,28 +190,27 @@ const CartDialog: React.FC<CartDialogProps> = ({
           </div>
         </div>
 
-        {/* Fixed Footer */}
+        {/* Footer */}
         {cartItems.length > 0 && (
-          <div className="border-t border-yellow-400 bg-linear-to-r from-yellow-50 to-yellow-100 p-3">
-            <div className="container max-w-4xl mx-auto">
-              <div className="flex items-center justify-between text-sm sm:text-base mb-2">
-                <span className="font-semibold">Total Amount</span>
-                <span className="text-lg sm:text-xl font-bold text-primary">
-                  {totalAmount.toLocaleString()} MMK
-                </span>
-              </div>
-              <Button
-                onClick={handleProceedToOrder}
-                className="w-full gradient-primary text-base py-4"
-                disabled={cartItems.length === 0}
-              >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Proceed to Order
-              </Button>
+          <div className="relative border-t border-orange-200 bg-linear-to-br from-orange-50/80 to-amber-50/80 backdrop-blur-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-lg font-semibold text-gray-700">Total Amount</span>
+              <span className="text-3xl font-bold bg-linear-to-br from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                {totalAmount.toLocaleString()} MMK
+              </span>
             </div>
+            <Button
+              onClick={handleProceedToOrder}
+              className="w-full bg-linear-to-br from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-lg py-6 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
+              disabled={cartItems.length === 0}
+            >
+              <ShoppingCart className="w-5 h-5 mr-2" />
+              Proceed to Order
+            </Button>
           </div>
         )}
       </div>
+    </div>
 
       <AddOrderDialog
         open={showAddOrderDialog}

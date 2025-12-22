@@ -88,3 +88,29 @@ export interface RealTimeOrderTrackingDTO {
   delivery?: DeliveryDTO;
   tracking?: DeliveryTrackingDTO;
 }
+
+// Location Management DTOs
+export interface UpdateDeliveryLocationDTO {
+  deliveryId?: string;
+  currentLatitude?: number;
+  currentLongitude?: number;
+  deviceToken?: string | null;
+}
+
+export interface GetNearbyDeliveriesRequest {
+  latitude?: number;
+  longitude?: number;
+  radiusInKm?: number;
+  townId?: string;
+}
+
+export interface DeliveryLocationDTO {
+  deliveryId?: string;
+  deliveryName?: string;
+  profile?: string;
+  phNo?: string;
+  currentLatitude?: number;
+  currentLongitude?: number;
+  isOnline?: boolean;
+  distanceInKm?: number;
+}

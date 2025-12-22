@@ -1,256 +1,194 @@
-import { Search } from "lucide-react";
+import { Search ,  Star,  Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
 
 interface HeroSectionProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }
 
-const HeroSection = ({ searchQuery, onSearchChange }: HeroSectionProps) => {
-  const heroHeading = "Delicious Food,\nDelivered Fast";
+const HeroSection = ({ 
+  searchQuery, 
+  onSearchChange
+}: HeroSectionProps) => {
+ 
 
   return (
-    <section className="relative w-[80%] mx-auto overflow-hidden text-yellow-900 py-20 px-4 border-4 border-yellow-400 shadow-lg rounded-[48px]" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)' }}>
-      {/* Map illustration background */}
-      <svg className="absolute inset-0 w-full h-full z-0" viewBox="0 0 1200 400" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
-        <rect x="0" y="0" width="1200" height="400" rx="48" fill="#fef9c3" />
-        
-        {/* Curved road path */}
-        <path d="M 80 360 C 200 360, 250 280, 320 280 C 390 280, 430 360, 500 360 C 570 360, 610 240, 680 240 C 750 240, 790 320, 860 320 C 930 320, 1000 140, 1120 100" 
-          stroke="#fbbf24" strokeWidth="12" fill="none" strokeLinecap="round" opacity="0.6" />
-        
-        {/* Road markings */}
-        <path d="M 100 360 L 130 360 M 200 320 L 230 310 M 320 280 L 350 280 M 440 340 L 470 350 M 580 280 L 610 270 M 700 240 L 730 240 M 820 300 L 850 310 M 950 180 L 980 160" 
-          stroke="#fff" strokeWidth="3" strokeDasharray="20,15" opacity="0.5" />
-        
-        {/* Customer home at start */}
-        <g transform="translate(60, 340)">
-          <rect x="0" y="0" width="40" height="40" rx="8" fill="#f472b6" />
-          <text x="20" y="28" fontSize="24" textAnchor="middle" fill="#fff">🏠</text>
-        </g>
-        
-        {/* Store icon at end */}
-        <g transform="translate(1100, 80)">
-          <rect x="0" y="0" width="40" height="40" rx="8" fill="#34d399" />
-          <text x="20" y="28" fontSize="24" textAnchor="middle" fill="#fff">🏪</text>
-        </g>
-        
-        {/* Waypoint markers */}
-        <circle cx="320" cy="280" r="6" fill="#fbbf24" opacity="0.6" />
-        <circle cx="500" cy="360" r="6" fill="#fbbf24" opacity="0.6" />
-        <circle cx="680" cy="240" r="6" fill="#fbbf24" opacity="0.6" />
-        <circle cx="860" cy="320" r="6" fill="#fbbf24" opacity="0.6" />
-      </svg>
-
-      {/* Enhanced Deliveryman animation */}
-      <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }}>
-        {/* Forward journey to store - no box initially */}
-        <div id="deliveryman-container" style={{ 
-          position: 'absolute', 
-          fontSize: 44, 
-          animation: 'deliveryRoute 8s ease-in-out infinite',
-          transformOrigin: 'center',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2)'
-        }}>
-          🚴
-        </div>
-
-        {/* Return journey with delivery box */}
-        <div id="deliveryman-return" style={{ 
-          position: 'absolute', 
-          fontSize: 44, 
-          animation: 'deliveryReturn 8s ease-in-out infinite',
-          animationDelay: '4s',
-          transformOrigin: 'center',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2)'
-        }}>
-          🚴
-          {/* Delivery box appears on return journey */}
-          <span style={{ 
-            position: 'absolute', 
-            top: -8, 
-            right: -12, 
-            fontSize: 20,
-            animation: 'boxBounce 0.5s ease-in-out infinite'
-          }}>📦</span>
-        </div>
-
-        {/* Speed lines effect */}
-        <div style={{
-          position: 'absolute',
-          animation: 'speedLines 8s ease-in-out infinite',
-          fontSize: 28,
-          opacity: 0.4
-        }}>💨</div>
-
-        <style>{`
-          @keyframes deliveryRoute {
-            0% { 
-              left: 80px; top: 360px; 
-              opacity: 1; 
-              transform: rotate(0deg) scale(1);
-            }
-            5% { transform: rotate(2deg) scale(1.05); }
-            12% { 
-              left: 200px; top: 340px; 
-              transform: rotate(-5deg) scale(1);
-            }
-            25% { 
-              left: 320px; top: 280px; 
-              transform: rotate(-15deg) scale(0.95);
-            }
-            30% { transform: rotate(-10deg) scale(1); }
-            38% { 
-              left: 500px; top: 360px; 
-              transform: rotate(10deg) scale(1.02);
-            }
-            50% { 
-              left: 680px; top: 240px; 
-              transform: rotate(-20deg) scale(0.9);
-            }
-            55% { transform: rotate(-15deg) scale(0.95); }
-            65% { 
-              left: 860px; top: 320px; 
-              transform: rotate(5deg) scale(1);
-            }
-            80% { 
-              left: 1000px; top: 180px; 
-              transform: rotate(-10deg) scale(0.95);
-            }
-            90% { 
-              left: 1120px; top: 100px; 
-              transform: rotate(0deg) scale(1);
-            }
-            95% { 
-              opacity: 1; 
-              transform: scale(0.8);
-            }
-            100% { 
-              left: 1120px; top: 100px; 
-              opacity: 0; 
-              transform: scale(0.5);
-            }
-          }
-
-          @keyframes deliveryReturn {
-            0% { 
-              left: 1120px; top: 100px; 
-              opacity: 0; 
-              transform: scale(0.5) scaleX(-1);
-            }
-            5% { 
-              opacity: 1; 
-              transform: scale(1) scaleX(-1);
-            }
-            15% { 
-              left: 1000px; top: 180px; 
-              transform: rotate(10deg) scale(0.95) scaleX(-1);
-            }
-            30% { 
-              left: 860px; top: 320px; 
-              transform: rotate(-5deg) scale(1) scaleX(-1);
-            }
-            45% { 
-              left: 680px; top: 240px; 
-              transform: rotate(20deg) scale(0.9) scaleX(-1);
-            }
-            58% { 
-              left: 500px; top: 360px; 
-              transform: rotate(-10deg) scale(1.02) scaleX(-1);
-            }
-            70% { 
-              left: 320px; top: 280px; 
-              transform: rotate(15deg) scale(0.95) scaleX(-1);
-            }
-            82% { 
-              left: 200px; top: 340px; 
-              transform: rotate(5deg) scale(1) scaleX(-1);
-            }
-            92% { 
-              left: 80px; top: 360px; 
-              transform: rotate(0deg) scale(1) scaleX(-1);
-            }
-            98% { 
-              opacity: 1; 
-              transform: scale(0.8) scaleX(-1);
-            }
-            100% { 
-              left: 80px; top: 360px; 
-              opacity: 0; 
-              transform: scale(0.5) scaleX(-1);
-            }
-          }
-
-          @keyframes boxBounce {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-3px); }
-          }
-
-          @keyframes speedLines {
-            0%, 100% { 
-              left: 80px; top: 360px; 
-              opacity: 0; 
-            }
-            10%, 90% { opacity: 0.4; }
-            15% { left: 180px; top: 345px; }
-            30% { left: 300px; top: 285px; }
-            50% { left: 660px; top: 245px; }
-            70% { left: 840px; top: 325px; }
-            85% { left: 1100px; top: 105px; }
-          }
-        `}</style>
+    <section className="relative w-full overflow-hidden">
+      {/* Modern gradient background with mesh pattern */}
+      <div className="absolute inset-0 bg-linear-to-br ">
+        <div className="absolute inset-0 opacity-30" style={{
+          backgroundImage: `radial-gradient(circle at 25px 25px, rgba(251, 191, 36, 0.2) 2%, transparent 0%), 
+                           radial-gradient(circle at 75px 75px, rgba(245, 158, 11, 0.2) 2%, transparent 0%)`,
+          backgroundSize: '100px 100px'
+        }}></div>
       </div>
 
-      {/* Raining food icons */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
-        {[...Array(40)].map((_, i) => {
-          const icons = ["🍔","🍕","🍣","🍜","🍟","🥗","🍩","🍦","🍤","🍛","🍗","🥪","🍿","🥟","🍱","🍞","🥚","🍅","🍆","🥒","🥕","🌽","🍄","🥬","🍠","🍯","🧀","🥨","🍪","🍰"];
-          const icon = icons[i % icons.length];
-          const left = Math.random() * 98;
-          const duration = 3 + Math.random() * 4;
-          const delay = Math.random() * 3;
-          return (
-            <span
-              key={i}
-              style={{
-                position: 'absolute',
-                left: `${left}%`,
-                top: '-40px',
-                fontSize: `${22 + Math.random() * 18}px`,
-                opacity: 0.18 + Math.random() * 0.22,
-                animation: `foodRain ${duration}s linear infinite`,
-                animationDelay: `${delay}s`,
-              }}
-            >{icon}</span>
-          );
-        })}
-        <style>{`
-          @keyframes foodRain {
-            0% { top: -40px; }
-            100% { top: 420px; }
-          }
-        `}</style>
-      </div>
+      {/* Animated gradient orbs */}
+      <div className="absolute top-20 -right-20 w-96 h-96 bg-linear-to-br from-orange-400/30 to-amber-400/30 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-linear-to-br from-yellow-400/30 to-orange-300/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
 
-      {/* Hero content */}
-      <div className="relative z-10">
-        <h1 className="text-4xl md:text-6xl font-bold mb-4" style={{ color: '#111', textShadow: '0 2px 12px rgba(0,0,0,0.12)', whiteSpace: 'pre-line', position: 'relative', zIndex: 2 }}>
-          {heroHeading}
-        </h1>
-        <p className="text-lg md:text-xl mb-8 opacity-90" style={{ color: '#111', textShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-          Order your favorite meals from the best restaurants in town
-        </p>
-        <div className="max-w-2xl mx-auto relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-          <Input
-            type="text"
-            placeholder="Search for food..."
-            className="pl-12 h-14 text-lg bg-white"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
+          <div className="space-y-8">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-orange-200">
+              <Zap className="w-4 h-4 text-orange-500" />
+              <span className="text-sm font-semibold text-gray-800">Fast & Fresh Delivery</span>
+            </div>
+
+            {/* Main Heading */}
+            <div>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
+                <span className="bg-linear-to-br from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent">
+                  Your Favorite
+                </span>
+                <br />
+                <span className="text-gray-900">Food Delivered</span>
+                <br />
+                <span className="text-gray-700">Hot & Fresh</span>
+              </h1>
+              <p className="text-lg md:text-xl text-gray-600 max-w-xl">
+                Discover delicious meals from top restaurants. Order now and get it delivered to your doorstep in minutes!
+              </p>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative max-w-xl">
+              <div className="relative group">
+                <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 group-hover:text-orange-500 transition-colors" />
+                <Input
+                  type="text"
+                  placeholder="Search for dishes, cuisines, or restaurants..."
+                  className="pl-14 pr-4 h-16 text-base bg-white/90 backdrop-blur-sm border-2 border-orange-200 hover:border-orange-400 focus:border-orange-500 rounded-2xl shadow-lg transition-all"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="bg-linear-to-br from-orange-500 to-amber-500 text-white px-6 py-3 rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all cursor-pointer font-medium">
+                    Search
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-6 pt-8">
+              <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-orange-100">
+                <div className="text-3xl font-bold text-orange-600">500+</div>
+                <div className="text-sm text-gray-600 mt-1">Restaurants</div>
+              </div>
+              <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-orange-100">
+                <div className="text-3xl font-bold text-orange-600">10k+</div>
+                <div className="text-sm text-gray-600 mt-1">Happy Users</div>
+              </div>
+              <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-orange-100">
+                <div className="text-3xl font-bold text-orange-600">30min</div>
+                <div className="text-sm text-gray-600 mt-1">Avg Delivery</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Content - Image & Features */}
+          <div className="relative lg:block hidden">
+            {/* Main food illustration */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-linear-to-br from-orange-400/20 to-amber-400/20 rounded-full blur-3xl"></div>
+              
+              {/* Floating food cards */}
+              <div className="relative space-y-6">
+                {/* Card 1 */}
+                <div className="ml-auto w-80 p-6 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-orange-100 transform hover:scale-105 transition-all animate-float">
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 bg-linear-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
+                      🍔
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900 text-lg">Burger Deluxe</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-semibold text-gray-700">4.8</span>
+                        <span className="text-xs text-gray-500 ml-2">• 25-30 min</span>
+                      </div>
+                      <div className="text-orange-600 font-bold mt-2">$12.99</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2 */}
+                <div className="w-80 p-6 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-orange-100 transform hover:scale-105 transition-all animate-float" style={{ animationDelay: '0.5s' }}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 bg-linear-to-br from-red-400 to-orange-500 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
+                      🍕
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900 text-lg">Italian Pizza</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-semibold text-gray-700">4.9</span>
+                        <span className="text-xs text-gray-500 ml-2">• 20-25 min</span>
+                      </div>
+                      <div className="text-orange-600 font-bold mt-2">$15.99</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3 */}
+                <div className="ml-auto w-80 p-6 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-orange-100 transform hover:scale-105 transition-all animate-float" style={{ animationDelay: '1s' }}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 bg-linear-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
+                      🥗
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900 text-lg">Fresh Salad</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-semibold text-gray-700">4.7</span>
+                        <span className="text-xs text-gray-500 ml-2">• 15-20 min</span>
+                      </div>
+                      <div className="text-orange-600 font-bold mt-2">$9.99</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Delivery person animation */}
+              <div className="absolute -bottom-10 -left-10 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-orange-200 animate-bounce-slow">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-linear-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-2xl">
+                    🚴
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 font-medium">Delivery Status</div>
+                    <div className="text-sm font-bold text-gray-900">On the way...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        
+        .animate-bounce-slow {
+          animation: bounce-slow 3s ease-in-out infinite;
+        }
+      `}</style>
     </section>
   );
 };

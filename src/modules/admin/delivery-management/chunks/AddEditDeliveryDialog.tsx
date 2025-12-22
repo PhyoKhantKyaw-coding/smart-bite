@@ -12,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Save, X } from "lucide-react";
 import { toast } from "sonner";
+import ImageUpload from "@/components/ImageUpload";
+import { getProfileImageUrl } from "@/lib/imageUtils";
 import { addDelivery, updateDelivery } from "@/api/delivery";
-import type { AddDeliveryDTO, UpdateDeliveryDTO } from "@/api/delivery/types";
 import { getAllTowns } from "@/api/store";
 import type { TownDTO } from "@/api/store/types";
 
@@ -23,11 +24,10 @@ interface DeliveryPerson {
   phone: string;
   email: string;
   password?: string;
+  profile?: string;
   townId?: string;
   townName?: string;
-  status: string;
   isOnline: boolean;
-  joinedDate: string;
 }
 
 interface AddEditDeliveryDialogProps {
@@ -49,12 +49,13 @@ const AddEditDeliveryDialog: React.FC<AddEditDeliveryDialogProps> = ({
     email: "",
     password: "",
     townId: "",
-    status: "Active",
     isOnline: true,
-    joinedDate: new Date().toISOString().split("T")[0],
   });
   const [loading, setLoading] = useState(false);
   const [towns, setTowns] = useState<TownDTO[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [, setRemoveImage] = useState(false);
 
   // Fetch towns
   useEffect(() => {
@@ -76,6 +77,14 @@ const AddEditDeliveryDialog: React.FC<AddEditDeliveryDialogProps> = ({
   useEffect(() => {
     if (delivery) {
       setFormData({...delivery, password: ""});
+      if (delivery.profile) {
+        const profileUrl = getProfileImageUrl(delivery.profile);
+        setImagePreview(profileUrl || null);
+      } else {
+        setImagePreview(null);
+      }
+      setImageFile(null);
+      setRemoveImage(false);
     } else {
       setFormData({
         name: "",
@@ -83,12 +92,32 @@ const AddEditDeliveryDialog: React.FC<AddEditDeliveryDialogProps> = ({
         email: "",
         password: "",
         townId: "",
-        status: "Active",
         isOnline: true,
-        joinedDate: new Date().toISOString().split("T")[0],
       });
+      setImagePreview(null);
+      setImageFile(null);
+      setRemoveImage(false);
     }
   }, [delivery, open]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setRemoveImage(false);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setRemoveImage(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,19 +131,23 @@ const AddEditDeliveryDialog: React.FC<AddEditDeliveryDialogProps> = ({
     try {
       if (delivery?.id) {
         // Update existing delivery person
-        const updateData: UpdateDeliveryDTO = {
-          deliveryId: delivery.id,
-          deliveryName: formData.name,
-          email: formData.email,
-          phNo: formData.phone,
-          password: formData.password || undefined,
-          townId: formData.townId,
-          isOnline: formData.isOnline,
-          currentLatitude: 16.8661,
-          currentLongitude: 96.1951,
-          deviceToken: null,
-        };
-        const response = await updateDelivery(updateData);
+        const formDataToSend = new FormData();
+        formDataToSend.append('DeliveryId', delivery.id);
+        formDataToSend.append('DeliveryName', formData.name);
+        formDataToSend.append('Email', formData.email);
+        formDataToSend.append('PhNo', formData.phone);
+        if (formData.password) {
+          formDataToSend.append('Password', formData.password);
+        }
+        formDataToSend.append('TownId', formData.townId || '');
+        formDataToSend.append('IsOnline', formData.isOnline.toString());
+        
+        // Add profile image if selected
+        if (imageFile) {
+          formDataToSend.append('ProfileFile', imageFile);
+        }
+        
+        const response = await updateDelivery(formDataToSend);
         if (response.status === 0 || response.status === 200 || response.status === 201) {
           // Call onSave to refresh the table, then close dialog
           await Promise.resolve(onSave());
@@ -125,18 +158,20 @@ const AddEditDeliveryDialog: React.FC<AddEditDeliveryDialogProps> = ({
         }
       } else {
         // Add new delivery person
-        const addData: AddDeliveryDTO = {
-          deliveryName: formData.name,
-          password: formData.password || "123456",
-          email: formData.email,
-          phNo: formData.phone,
-          townId: formData.townId,
-          isOnline: formData.isOnline,
-          currentLatitude: 16.8661,
-          currentLongitude: 96.1951,
-          deviceToken: null,
-        };
-        const response = await addDelivery(addData);
+        const formDataToSend = new FormData();
+        formDataToSend.append('DeliveryName', formData.name);
+        formDataToSend.append('Password', formData.password || '123456');
+        formDataToSend.append('Email', formData.email);
+        formDataToSend.append('PhNo', formData.phone);
+        formDataToSend.append('TownId', formData.townId || '');
+        formDataToSend.append('IsOnline', formData.isOnline.toString());
+        
+        // Add profile image if selected (optional for new delivery person)
+        if (imageFile) {
+          formDataToSend.append('ProfileFile', imageFile);
+        }
+        
+        const response = await addDelivery(formDataToSend);
         if (response.status === 0 || response.status === 200 || response.status === 201) {
           // Call onSave to refresh the table, then close dialog
           await Promise.resolve(onSave());
@@ -146,9 +181,9 @@ const AddEditDeliveryDialog: React.FC<AddEditDeliveryDialogProps> = ({
           toast.error(response.message || "Failed to add delivery person");
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to save delivery:", error);
-      toast.error(error.response?.data?.message || "Failed to save delivery person");
+      toast.error( "Failed to save delivery person");
     } finally {
       setLoading(false);
     }
@@ -170,6 +205,18 @@ const AddEditDeliveryDialog: React.FC<AddEditDeliveryDialogProps> = ({
           {/* Personal Information */}
           <div className="space-y-4">
             <h3 className="font-semibold text-base sm:text-lg">Personal Information</h3>
+            
+            {/* Profile Picture Upload */}
+            <ImageUpload
+              imagePreview={imagePreview}
+              onImageChange={handleImageChange}
+              onRemoveImage={handleRemoveImage}
+              label="Profile Picture"
+              description="Upload a profile picture"
+              subDescription="JPG, PNG or GIF (Max 5MB)"
+              shape="circle"
+              size="md"
+            />
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -252,44 +299,28 @@ const AddEditDeliveryDialog: React.FC<AddEditDeliveryDialogProps> = ({
             </div>
           </div>
 
-          {/* Status */}
+          {/* Online Status */}
           <div className="space-y-4">
             <h3 className="font-semibold text-base sm:text-lg">Status</h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Employment Status</Label>
-                <RadioGroup
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Active" id="active" />
-                    <Label htmlFor="active" className="cursor-pointer">Active</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Inactive" id="inactive" />
-                    <Label htmlFor="inactive" className="cursor-pointer">Inactive</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Online Status</Label>
-                <RadioGroup
-                  value={formData.isOnline ? "online" : "offline"}
-                  onValueChange={(value) => setFormData({ ...formData, isOnline: value === "online" })}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="online" id="online" />
-                    <Label htmlFor="online" className="cursor-pointer">Online</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="offline" id="offline" />
-                    <Label htmlFor="offline" className="cursor-pointer">Offline</Label>
-                  </div>
-                </RadioGroup>
-              </div>
+            <div className="space-y-2">
+              <Label>Online Status</Label>
+              <RadioGroup
+                value={formData.isOnline ? "online" : "offline"}
+                onValueChange={(value) => setFormData({ ...formData, isOnline: value === "online" })}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="online" id="online" />
+                  <Label htmlFor="online" className="cursor-pointer">Online</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="offline" id="offline" />
+                  <Label htmlFor="offline" className="cursor-pointer">Offline</Label>
+                </div>
+              </RadioGroup>
+              <p className="text-xs text-muted-foreground">
+                Location and device token will be updated when delivery person logs in
+              </p>
             </div>
           </div>
 

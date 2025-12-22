@@ -1,11 +1,12 @@
 import axios from '@/configs/axios';
 import type {
-  AddDeliveryDTO,
-  UpdateDeliveryDTO,
   GetDeliveryDTO,
   GetAllDeliveriesDTO,
   PaginatedDeliveryResult,
   RealTimeOrderTrackingDTO,
+  UpdateDeliveryLocationDTO,
+  GetNearbyDeliveriesRequest,
+  DeliveryLocationDTO,
 } from './types.d';
 
 interface ResponseDTO<T> {
@@ -17,14 +18,22 @@ interface ResponseDTO<T> {
 // ============ Delivery Management ============
 
 // Add Delivery Person
-export async function addDelivery(data: AddDeliveryDTO): Promise<ResponseDTO<null>> {
-  const response = await axios.post('/api/Delivery/delivery/add', data);
+export async function addDelivery(data: FormData): Promise<ResponseDTO<null>> {
+  const response = await axios.post('/api/Delivery/delivery/add', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 }
 
 // Update Delivery Person
-export async function updateDelivery(data: UpdateDeliveryDTO): Promise<ResponseDTO<null>> {
-  const response = await axios.put('/api/Delivery/delivery/update', data);
+export async function updateDelivery(data: FormData): Promise<ResponseDTO<null>> {
+  const response = await axios.put('/api/Delivery/delivery/update', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 }
 
@@ -43,6 +52,32 @@ export async function deleteDelivery(deliveryId: string): Promise<ResponseDTO<nu
 // Get Delivery by ID
 export async function getDeliveryById(deliveryId: string): Promise<ResponseDTO<GetDeliveryDTO>> {
   const response = await axios.get(`/api/Delivery/delivery/${deliveryId}`);
+  return response.data;
+}
+
+// ============ Location Management ============
+
+// Update Delivery Location
+export async function updateDeliveryLocation(data: UpdateDeliveryLocationDTO): Promise<ResponseDTO<GetDeliveryDTO>> {
+  const response = await axios.post('/api/Delivery/location/update', data);
+  return response.data;
+}
+
+// Get Nearby Deliveries
+export async function getNearbyDeliveries(request: GetNearbyDeliveriesRequest): Promise<ResponseDTO<DeliveryLocationDTO[]>> {
+  const response = await axios.post('/api/Delivery/location/nearby', request);
+  return response.data;
+}
+
+// Set Delivery Online Status
+export async function setDeliveryOnlineStatus(deliveryId: string, isOnline: boolean): Promise<ResponseDTO<{ deliveryId: string; isOnline: boolean }>> {
+  const response = await axios.put(`/api/Delivery/location/status/${deliveryId}`, isOnline);
+  return response.data;
+}
+
+// Get All Active Delivery Locations
+export async function getAllActiveDeliveryLocations(): Promise<ResponseDTO<DeliveryLocationDTO[]>> {
+  const response = await axios.get('/api/Delivery/location/active-all');
   return response.data;
 }
 

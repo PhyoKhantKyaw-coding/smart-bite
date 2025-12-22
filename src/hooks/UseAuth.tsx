@@ -5,6 +5,8 @@ import type { RootState } from "@/store";
 import { setUser } from "@/store/authSlice";
 import { useNavigate } from "react-router-dom";
 import { getUserById } from "@/api/user";
+import { updateDeliveryLocation } from "@/api/delivery";
+import { toast } from "sonner";
 
 interface AuthUser {
   userId: string;
@@ -20,6 +22,111 @@ interface DecodedToken {
   role: string;
   userName: string;
   exp: number;
+}
+
+// Generate a unique device token (in production, use FCM/APNs)
+function generateDeviceToken(): string {
+  return `device_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+}
+
+// Get or create device token
+function getDeviceToken(): string {
+  let deviceToken = localStorage.getItem('deviceToken');
+  if (!deviceToken) {
+    deviceToken = generateDeviceToken();
+    localStorage.setItem('deviceToken', deviceToken);
+  }
+  return deviceToken;
+}
+
+// Request and start location tracking for delivery users
+async function startDeliveryLocationTracking(deliveryId: string, deviceToken: string): Promise<void> {
+  if (!navigator.geolocation) {
+    toast.error('Geolocation is not supported by your browser');
+    return;
+  }
+
+  // Request permission and get current location
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          
+          // Update delivery location with device token
+          await updateDeliveryLocation({
+            deliveryId,
+            currentLatitude: latitude,
+            currentLongitude: longitude,
+            deviceToken
+          });
+
+          toast.success('Location tracking enabled');
+
+          // Start watching position for real-time updates
+          const watchId = navigator.geolocation.watchPosition(
+            async (pos) => {
+              const { latitude: lat, longitude: lng } = pos.coords;
+              try {
+                await updateDeliveryLocation({
+                  deliveryId,
+                  currentLatitude: lat,
+                  currentLongitude: lng,
+                  deviceToken
+                });
+                console.log('Location updated:', lat, lng);
+              } catch (error) {
+                console.error('Failed to update location:', error);
+              }
+            },
+            (error) => {
+              console.error('Location watch error:', error);
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 30000
+            }
+          );
+
+          // Store watch ID to stop tracking on logout
+          sessionStorage.setItem('locationWatchId', watchId.toString());
+          resolve();
+        } catch (error) {
+          console.error('Failed to update initial location:', error);
+          toast.error('Failed to update location');
+          reject(error);
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error('Location permission denied. Please enable location access for delivery tracking.');
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          toast.error('Location information unavailable.');
+        } else if (error.code === error.TIMEOUT) {
+          toast.error('Location request timed out.');
+        }
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
+}
+
+// Stop location tracking
+function stopDeliveryLocationTracking(): void {
+  const watchIdStr = sessionStorage.getItem('locationWatchId');
+  if (watchIdStr) {
+    const watchId = parseInt(watchIdStr, 10);
+    navigator.geolocation.clearWatch(watchId);
+    sessionStorage.removeItem('locationWatchId');
+    console.log('Location tracking stopped');
+  }
 }
 
 // Decode JWT token
@@ -97,16 +204,29 @@ export function useAuth() {
     // Dispatch to Redux store
     dispatch(setUser(userData));
 
-
-    // Redirect based on role
-    if (userData.role === "admin") navigate("/admin");
-    else if (userData.role === "delivery") navigate("/delivery");
-    else navigate("/user");
+    // If delivery user, start location tracking and get device token
+    if (userData.role === "delivery") {
+      const deviceToken = getDeviceToken();
+      
+      // Start location tracking in background
+      startDeliveryLocationTracking(userData.userId, deviceToken).catch((error) => {
+        console.error('Failed to start location tracking:', error);
+      });
+      
+      navigate("/delivery");
+    } else if (userData.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/user");
+    }
 
     return true;
   };
 
   const logout = (): void => {
+    // Stop location tracking if active
+    stopDeliveryLocationTracking();
+    
     dispatch(setUser(null));
     localStorage.removeItem("authToken");
     sessionStorage.removeItem("userProfile");

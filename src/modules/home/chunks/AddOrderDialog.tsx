@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import type { GetCartDTO } from "@/api/user/types";
+import type { AddOrderDTO, MapDTO } from "@/api/delivery/type";
 import { addOrder } from "@/api/delivery";
 import { toast } from "sonner";
 import KPayQRDialog from "./KPayQRDialog";
@@ -46,24 +47,6 @@ const AddOrderDialog: React.FC<AddOrderDialogProps> = ({
   const [showMapDialog, setShowMapDialog] = useState(false);
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const addOrderMutation = addOrder.useMutation({
-    onSuccess: (response) => {
-      if (response.status === 0) {
-        toast.success("Order placed successfully!");
-        onOrderSuccess?.();
-        onOpenChange(false);
-        resetForm();
-      } else {
-        toast.error(response.message || "Failed to place order");
-      }
-      setIsProcessing(false);
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to place order");
-      setIsProcessing(false);
-    },
-  });
 
   const totalAmount = cartItems.reduce(
     (total, item) => total + (item.eachPrice || 0) * (item.quantity || 0),
@@ -110,7 +93,7 @@ const AddOrderDialog: React.FC<AddOrderDialogProps> = ({
     }
   };
 
-  const processOrder = () => {
+  const processOrder = async () => {
     setIsProcessing(true);
 
     const orderData: AddOrderDTO = {
@@ -126,7 +109,22 @@ const AddOrderDialog: React.FC<AddOrderDialogProps> = ({
       paymentAmount: totalAmount,
     };
 
-    addOrderMutation.mutate(orderData);
+    try {
+      const response = await addOrder(orderData);
+      if (response.status === 0) {
+        toast.success("Order placed successfully!");
+        onOrderSuccess?.();
+        onOpenChange(false);
+        resetForm();
+      } else {
+        toast.error(response.message || "Failed to place order");
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to place order");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback, useRef } from "react";
 import HeroSection from "./chunks/HeroSection";
 import FoodCard from "@/components/FoodCard";
 import CartDialog from "./chunks/CartDialog";
@@ -22,7 +22,6 @@ interface OrderDTO {
     quantity?: number;
   }>;
 }
-
 const Home = () => {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -57,10 +56,16 @@ const Home = () => {
     await fetchOrders();
   };
 
-  const fetchFoods = useCallback(async () => {
+const didFetch = useRef(false);
+  const fetchFoods = async (params?: { query?: string; catId?: string }) => {
     setLoadingFoods(true);
     try {
-      const response = await getAllFoods({ page: 1, pageSize: 100 });
+      const response = await getAllFoods({ 
+        page: 1, 
+        pageSize: 100,
+        query: params?.query,
+        catId: params?.catId
+      });
 
       
       if (response && response.data) {
@@ -77,9 +82,9 @@ const Home = () => {
     } finally {
       setLoadingFoods(false);
     }
-  }, []);
+  };
 
-  const fetchCategories = useCallback(async () => {
+  const fetchCategories = async () => {
     setLoadingCategories(true);
     try {
       const response = await getAllCategories();
@@ -98,7 +103,7 @@ const Home = () => {
     } finally {
       setLoadingCategories(false);
     }
-  }, []);
+  };
 
   const fetchCart = useCallback(async () => {
     // Only fetch if user is logged in with 'user' role
@@ -138,22 +143,27 @@ const Home = () => {
 
   // Fetch foods and categories only once on mount
   useEffect(() => {
-    fetchFoods();
-    fetchCategories();
-  }, [fetchFoods, fetchCategories]);
+   if (!didFetch.current) {
+      fetchFoods();
+      fetchCategories();
+      didFetch.current = true;
+    }
+  }, []);
 
-  // Fetch cart, favorites, and orders when user changes
+  // Refetch foods when search query or category changes
   useEffect(() => {
-    fetchCart();
-    fetchFavorites();
-    fetchOrders();
-  }, [fetchCart, fetchFavorites, fetchOrders]);
+    if (didFetch.current) {
+      // Get catId from categories if a category is selected
+      const category = selectedCategory ? categories.find(c => c.catName === selectedCategory) : null;
+      fetchFoods({
+        query: searchQuery || undefined,
+        catId: category?.catName // API uses catName as identifier based on the types
+      });
+    }
+  }, [searchQuery, selectedCategory, categories]);
 
-  const filteredFoods = foods.filter((food) => {
-    const matchesCategory = !selectedCategory || food.catName === selectedCategory;
-    const matchesSearch = food.name?.toLowerCase().includes(searchQuery.toLowerCase()) || food.foodDescription?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // No need for client-side filtering anymore as API handles it
+  const filteredFoods = foods;
 
   // const handleUpdateCartQuantity = (foodId: string, quantity: number) => {
   //   setCartItems(cartItems.map((item) => item.foodId === foodId ? { ...item, quantity } : item));
@@ -245,45 +255,21 @@ const Home = () => {
   return (
     <>
       <div className="p-9" style={{ background: 'linear-gradient(120deg, #fffbe6 0%, #fbbf24 100%)' }}>
-        {/* Show cart, favorites, or order history pages in place of hero section */}
-        {showCartDialog ? (
-          <CartDialog 
-            open={showCartDialog} 
-            onOpenChange={setShowCartDialog} 
-            cartItems={cartItems} 
-            onRemoveItem={handleRemoveCartItem} 
-            onProceedToOrder={handleProceedToOrder} 
-            onRefreshCart={fetchCart} 
-          />
-        ) : showFavoriteDialog ? (
-          <FavoriteDialog 
-            open={showFavoriteDialog} 
-            onOpenChange={setShowFavoriteDialog} 
-            favoriteItems={favoriteItems} 
-            onRemoveFavorite={handleRemoveFavorite} 
-            onAddToCart={handleAddToCartFromFavorite} 
-          />
-        ) : showOrderHistoryDialog ? (
-          <OrderHistoryDialog 
-            open={showOrderHistoryDialog} 
-            onOpenChange={setShowOrderHistoryDialog} 
-            orders={orderHistory} 
-            onReorder={handleReorder} 
-            onRefresh={handleRefreshOrders} 
-          />
-        ) : (
-          <HeroSection searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-        )}
+        {/* Hero Section - Always visible */}
+        <HeroSection 
+          searchQuery={searchQuery} 
+          onSearchChange={setSearchQuery} 
+        />
 
         {/* Categories and food grid - always visible */}
         <section className="py-4 bg-muted/30 w-full rounded-2xl border-b">
           <div className="container">
             <div className="flex gap-3 ml-2 overflow-x-auto scrollbar-hide pb-2">
-              <Button variant={selectedCategory === null ? "default" : "outline"} onClick={() => setSelectedCategory(null)} className={selectedCategory === null ? "gradient-primary" : "text-black"} disabled={loadingCategories}>All</Button>
+              <Button variant={selectedCategory === null ? "default" : "outline"} onClick={() => setSelectedCategory(null)} className={selectedCategory === null ? "gradient-primary" : "text-black"} disabled={loadingCategories || loadingFoods}>All</Button>
               {loadingCategories ? (
                 <div className="flex gap-3">{[...Array(5)].map((_, i) => (<Skeleton key={i} className="h-10 w-24" />))}</div>
               ) : (
-                categories.map((category) => (<Button key={category.catName} variant={selectedCategory === category.catName ? "default" : "outline"} onClick={() => setSelectedCategory(category.catName || null)} className={selectedCategory === category.catName ? "gradient-primary" : "text-black"}>{category.catName}</Button>))
+                categories.map((category) => (<Button key={category.catName} variant={selectedCategory === category.catName ? "default" : "outline"} onClick={() => setSelectedCategory(category.catName || null)} className={selectedCategory === category.catName ? "gradient-primary" : "text-black"} disabled={loadingFoods}>{category.catName}</Button>))
               )}
             </div>
           </div>
@@ -306,6 +292,32 @@ const Home = () => {
           </div>
         </section>
       </div>
+
+      {/* Dialogs - Rendered as overlays */}
+      <CartDialog 
+        open={showCartDialog} 
+        onOpenChange={setShowCartDialog} 
+        cartItems={cartItems} 
+        onRemoveItem={handleRemoveCartItem} 
+        onProceedToOrder={handleProceedToOrder} 
+        onRefreshCart={fetchCart} 
+      />
+      
+      <FavoriteDialog 
+        open={showFavoriteDialog} 
+        onOpenChange={setShowFavoriteDialog} 
+        favoriteItems={favoriteItems} 
+        onRemoveFavorite={handleRemoveFavorite} 
+        onAddToCart={handleAddToCartFromFavorite} 
+      />
+      
+      <OrderHistoryDialog 
+        open={showOrderHistoryDialog} 
+        onOpenChange={setShowOrderHistoryDialog} 
+        orders={orderHistory} 
+        onReorder={handleReorder} 
+        onRefresh={handleRefreshOrders} 
+      />
 
       {/* Product detail dialog can show over everything */}
       {selectedFoodId && (<ProductDetailDialog open={showProductDetail} onOpenChange={setShowProductDetail} foodId={selectedFoodId} onAddToFavorite={handleToggleFavorite} onRefreshCart={fetchCart} />)}
