@@ -9,17 +9,59 @@ import { getAllActiveDeliveryLocations } from "@/api/delivery";
 import type { DeliveryLocationDTO } from "@/api/delivery/types";
 import { toast } from "sonner";
 
-// Custom icons for online/offline delivery persons
-const createDeliveryIcon = (isOnline: boolean) => {
-  return new L.Icon({
-    iconUrl: isOnline
-      ? "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png"
-      : "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
+// Custom delivery person icon with name
+const createDeliveryIcon = (name: string, isOnline: boolean) => {
+  const color = isOnline ? '#22c55e' : '#ef4444';
+  const bgColor = isOnline ? '#dcfce7' : '#fee2e2';
+  
+  return L.divIcon({
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+        <div style="
+          background: ${bgColor};
+          border: 3px solid ${color};
+          border-radius: 50%;
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <div style="
+          background: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          margin-top: 4px;
+          white-space: nowrap;
+          font-size: 12px;
+          font-weight: 600;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          border: 1px solid ${color};
+          color: ${color};
+        ">${name}</div>
+        <div style="
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 8px solid white;
+        "></div>
+      </div>
+    `,
+    className: 'custom-delivery-icon',
+    iconSize: [48, 80],
+    iconAnchor: [24, 80],
+    popupAnchor: [0, -80],
   });
 };
 
@@ -86,11 +128,11 @@ const DeliveryMapView: React.FC<DeliveryMapViewProps> = ({
         </Button>
       </div>
 
-      <div className="h-[600px] rounded-lg overflow-hidden border">
+      <div className="h-[600px] rounded-lg overflow-hidden border" style={{ zIndex: 1, position: 'relative' }}>
         <MapContainer
           center={center}
           zoom={13}
-          style={{ height: "100%", width: "100%" }}
+          style={{ height: "100%", width: "100%", zIndex: 1 }}
           scrollWheelZoom={true}
         >
           <TileLayer
@@ -105,7 +147,7 @@ const DeliveryMapView: React.FC<DeliveryMapViewProps> = ({
               <div key={person.deliveryId}>
                 <Marker
                   position={[person.currentLatitude, person.currentLongitude]}
-                  icon={createDeliveryIcon(person.isOnline || false)}
+                  icon={createDeliveryIcon(person.deliveryName || 'Delivery', person.isOnline || false)}
                 >
                   <Popup>
                     <div className="p-2 min-w-[250px]">

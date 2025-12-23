@@ -150,9 +150,9 @@ const didFetch = useRef(false);
     }
   }, []);
 
-  // Refetch foods when search query or category changes
+  // Refetch foods when search query or category changes (but not when categories array loads)
   useEffect(() => {
-    if (didFetch.current) {
+    if (didFetch.current && categories.length > 0) {
       // Get catId from categories if a category is selected
       const category = selectedCategory ? categories.find(c => c.catName === selectedCategory) : null;
       fetchFoods({
@@ -160,7 +160,8 @@ const didFetch = useRef(false);
         catId: category?.catName // API uses catName as identifier based on the types
       });
     }
-  }, [searchQuery, selectedCategory, categories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, selectedCategory]);
 
   // No need for client-side filtering anymore as API handles it
   const filteredFoods = foods;

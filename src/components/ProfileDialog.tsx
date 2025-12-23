@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -118,6 +119,8 @@ const ProfileDialog = ({
           borderColor: isDark ? '#3f3f46' : '#e4e4e7',
         }}
       >
+        <DialogTitle className="sr-only">User Profile</DialogTitle>
+        
         {/* Loading Overlay */}
         {isLoading && (
           <div

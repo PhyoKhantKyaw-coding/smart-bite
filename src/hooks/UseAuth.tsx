@@ -5,9 +5,9 @@ import type { RootState } from "@/store";
 import { setUser } from "@/store/authSlice";
 import { useNavigate } from "react-router-dom";
 import { getUserById } from "@/api/user";
-import { updateDeliveryLocation } from "@/api/delivery";
 import { toast } from "sonner";
-
+import * as signalR from "@microsoft/signalr";
+import axios from "axios";
 interface AuthUser {
   userId: string;
   email: string;
@@ -25,94 +25,263 @@ interface DecodedToken {
 }
 
 // Generate a unique device token (in production, use FCM/APNs)
-function generateDeviceToken(): string {
-  return `device_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-}
 
 // Get or create device token
-function getDeviceToken(): string {
-  let deviceToken = localStorage.getItem('deviceToken');
-  if (!deviceToken) {
-    deviceToken = generateDeviceToken();
-    localStorage.setItem('deviceToken', deviceToken);
-  }
-  return deviceToken;
+
+
+// Check if location tracking is already active or was denied
+function isLocationTrackingActive(): boolean {
+  return sessionStorage.getItem('locationWatchId') !== null;
 }
 
-// Request and start location tracking for delivery users
-async function startDeliveryLocationTracking(deliveryId: string, deviceToken: string): Promise<void> {
+function wasLocationDenied(): boolean {
+  return sessionStorage.getItem('locationDenied') === 'true';
+}
+
+function setLocationDenied(): void {
+  sessionStorage.setItem('locationDenied', 'true');
+}
+
+function hasShownLocationError(): boolean {
+  return sessionStorage.getItem('locationErrorShown') === 'true';
+}
+
+function setLocationErrorShown(): void {
+  sessionStorage.setItem('locationErrorShown', 'true');
+}
+
+// SignalR connection and initialization lock
+let isInitializing = false;
+let signalRConnection: signalR.HubConnection | null = null;
+
+// Start location tracking with SignalR
+async function startDeliveryLocationTracking(deliveryId: string, userName: string): Promise<void> {
+  if (isInitializing) {
+    console.log('⏳ Location tracking initialization already in progress, skipping...');
+    return;
+  }
+  
+  if (isLocationTrackingActive()) {
+    console.log('✓ Location tracking already active, skipping...');
+    return;
+  }
+  
+  if (wasLocationDenied()) {
+    console.log('Location permission was denied, skipping...');
+    return;
+  }
+
   if (!navigator.geolocation) {
     toast.error('Geolocation is not supported by your browser');
     return;
   }
 
-  // Request permission and get current location
+  isInitializing = true;
+
+  // Get device token
+ 
+
+  // Initialize SignalR connection
+  const apiUrl = axios.defaults.baseURL || '';
+  const hubUrl = `${apiUrl.replace(/\/$/, '')}/deliveryTrackingHub`;
+  
+  console.log('🔌 Connecting to SignalR hub:', hubUrl);
+  
+  signalRConnection = new signalR.HubConnectionBuilder()
+    .withUrl(hubUrl, {
+      accessTokenFactory: () => localStorage.getItem('authToken') || '',
+      transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
+    })
+    .withAutomaticReconnect({
+      nextRetryDelayInMilliseconds: (retryContext) => {
+        if (retryContext.elapsedMilliseconds < 60000) {
+          return Math.random() * 10000;
+        } else {
+          return null;
+        }
+      }
+    })
+    .configureLogging(signalR.LogLevel.Information)
+    .build();
+
+  signalRConnection.onreconnecting((error) => {
+    console.log('⚠️ SignalR reconnecting...', error);
+  });
+
+  signalRConnection.onreconnected((connectionId) => {
+    console.log('✓ SignalR reconnected:', connectionId);
+    toast.success('Location tracking reconnected');
+  });
+
+  signalRConnection.onclose((error) => {
+    console.log('❌ SignalR connection closed:', error);
+    sessionStorage.removeItem('locationWatchId');
+    sessionStorage.removeItem('locationIntervalId');
+    isInitializing = false;
+  });
+
+  // Listen for server acknowledgments
+  signalRConnection.on('Connected', (data) => {
+    console.log('✓ Server confirmed connection:', data);
+  });
+
+  signalRConnection.on('ReceiveDeliveryLocationUpdate', (data) => {
+    console.log('📍 Location update acknowledged:', data);
+  });
+
+  let currentPosition: { lat: number; lng: number } | null = null;
+  const UPDATE_INTERVAL = 5000;
+
+  const updateLocation = async (latitude: number, longitude: number) => {
+    if (!signalRConnection || signalRConnection.state !== signalR.HubConnectionState.Connected) {
+      console.log('⚠️ SignalR not connected, skipping update');
+      return;
+    }
+
+    try {
+      console.log('📍 Sending location via SignalR:', {
+        deliveryId,
+        latitude,
+        longitude
+      });
+
+      // Call the hub method: SendDeliveryLocationUpdate
+      await signalRConnection.invoke('SendDeliveryLocationUpdate', 
+        deliveryId, // Guid deliveryId
+        userName, // string deliveryName
+        latitude, // decimal latitude
+        longitude, // decimal longitude
+        true // bool isOnline
+      );
+      
+      console.log('✓ Location sent via SignalR:', { 
+        latitude, 
+        longitude, 
+        time: new Date().toLocaleTimeString() 
+      });
+    } catch (error) {
+      console.error('✗ Failed to send location via SignalR:', error);
+    }
+  };
+
+  // Start SignalR connection
+  try {
+    await signalRConnection.start();
+    console.log('✓ SignalR connected successfully');
+    toast.success('Real-time tracking connected');
+  } catch (error) {
+    console.error('❌ Failed to connect SignalR:', error);
+    toast.error('Failed to connect real-time tracking');
+    isInitializing = false;
+    return;
+  }
+
+  // Request geolocation permission
   return new Promise((resolve, reject) => {
+    console.log('🔍 Requesting geolocation permission for delivery:', deliveryId);
+    
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const { latitude, longitude } = position.coords;
+          const { latitude, longitude, accuracy } = position.coords;
           
-          // Update delivery location with device token
-          await updateDeliveryLocation({
-            deliveryId,
-            currentLatitude: latitude,
-            currentLongitude: longitude,
-            deviceToken
+          console.log('✓ Got initial location:', {
+            latitude,
+            longitude,
+            accuracy: `${accuracy}m`,
+            timestamp: new Date(position.timestamp).toLocaleTimeString()
           });
+          
+          // Send initial location
+          await updateLocation(latitude, longitude);
 
-          toast.success('Location tracking enabled');
-
-          // Start watching position for real-time updates
+          // Watch position for GPS updates
           const watchId = navigator.geolocation.watchPosition(
-            async (pos) => {
-              const { latitude: lat, longitude: lng } = pos.coords;
-              try {
-                await updateDeliveryLocation({
-                  deliveryId,
-                  currentLatitude: lat,
-                  currentLongitude: lng,
-                  deviceToken
-                });
-                console.log('Location updated:', lat, lng);
-              } catch (error) {
-                console.error('Failed to update location:', error);
-              }
+            (pos) => {
+              const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
+              currentPosition = { lat, lng };
+              
+              console.log('🔄 Position update received:', {
+                latitude: lat,
+                longitude: lng,
+                accuracy: `${acc}m`,
+                timestamp: new Date(pos.timestamp).toLocaleTimeString()
+              });
             },
             (error) => {
-              console.error('Location watch error:', error);
+              // Suppress permission denied errors to avoid console spam
+              if (error.code === 1) { // GeolocationPositionError.PERMISSION_DENIED
+                setLocationDenied();
+                if (!hasShownLocationError()) {
+                  setLocationErrorShown();
+                  toast.error('Location permission denied');
+                }
+              } else {
+                console.error('❌ Location watch error:', {
+                  code: error.code,
+                  message: error.message
+                });
+              }
             },
             {
-              enableHighAccuracy: true,
+              enableHighAccuracy: false,
               timeout: 10000,
               maximumAge: 30000
             }
           );
 
-          // Store watch ID to stop tracking on logout
+          // Store watch ID
           sessionStorage.setItem('locationWatchId', watchId.toString());
+          
+          // Set up interval to send location every 5 seconds
+          const intervalId = setInterval(() => {
+            if (currentPosition) {
+              console.log('⏰ 5-second interval triggered');
+              updateLocation(currentPosition.lat, currentPosition.lng);
+            }
+          }, UPDATE_INTERVAL);
+          
+          sessionStorage.setItem('locationIntervalId', intervalId.toString());
+          
+          isInitializing = false;
           resolve();
         } catch (error) {
           console.error('Failed to update initial location:', error);
           toast.error('Failed to update location');
+          isInitializing = false;
           reject(error);
         }
       },
       (error) => {
-        console.error('Geolocation error:', error);
-        if (error.code === error.PERMISSION_DENIED) {
-          toast.error('Location permission denied. Please enable location access for delivery tracking.');
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          toast.error('Location information unavailable.');
-        } else if (error.code === error.TIMEOUT) {
-          toast.error('Location request timed out.');
+        isInitializing = false;
+        if (error.code === 1) { // GeolocationPositionError.PERMISSION_DENIED
+          setLocationDenied();
+          if (!hasShownLocationError()) {
+            setLocationErrorShown();
+            toast.error('Location permission denied. Please enable location access in your browser settings.');
+          }
+          // Don't log permission denied errors
+        } else if (error.code === 2) { // GeolocationPositionError.POSITION_UNAVAILABLE
+          if (!hasShownLocationError()) {
+            setLocationErrorShown();
+            toast.error('Location information unavailable.');
+          }
+          console.error('Geolocation error:', error);
+        } else if (error.code === 3) { // GeolocationPositionError.TIMEOUT
+          if (!hasShownLocationError()) {
+            setLocationErrorShown();
+            toast.error('Location request timed out. Please check your GPS settings.');
+          }
+          console.error('Geolocation error:', error);
+        } else {
+          console.error('Geolocation error:', error);
         }
         reject(error);
       },
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 30000
       }
     );
   });
@@ -125,8 +294,27 @@ function stopDeliveryLocationTracking(): void {
     const watchId = parseInt(watchIdStr, 10);
     navigator.geolocation.clearWatch(watchId);
     sessionStorage.removeItem('locationWatchId');
-    console.log('Location tracking stopped');
+    console.log('📍 GPS tracking stopped');
   }
+  
+  const intervalIdStr = sessionStorage.getItem('locationIntervalId');
+  if (intervalIdStr) {
+    const intervalId = parseInt(intervalIdStr, 10);
+    clearInterval(intervalId);
+    sessionStorage.removeItem('locationIntervalId');
+    console.log('⏱️ Location update interval cleared');
+  }
+  
+  if (signalRConnection) {
+    signalRConnection.stop().then(() => {
+      console.log('🔌 SignalR connection closed');
+    }).catch((error) => {
+      console.error('Error closing SignalR:', error);
+    });
+    signalRConnection = null;
+  }
+  
+  isInitializing = false;
 }
 
 // Decode JWT token
@@ -204,13 +392,15 @@ export function useAuth() {
     // Dispatch to Redux store
     dispatch(setUser(userData));
 
-    // If delivery user, start location tracking and get device token
+    // If delivery user, start location tracking with SignalR
     if (userData.role === "delivery") {
-      const deviceToken = getDeviceToken();
+      console.log('🚚 Starting location tracking for delivery user:', {
+        userId: userData.userId,
+        userName: userData.userName
+      });
       
-      // Start location tracking in background
-      startDeliveryLocationTracking(userData.userId, deviceToken).catch((error) => {
-        console.error('Failed to start location tracking:', error);
+      startDeliveryLocationTracking(userData.userId, userData.userName).catch(() => {
+        // Errors already handled with toasts and flags, fail silently
       });
       
       navigate("/delivery");
@@ -224,8 +414,9 @@ export function useAuth() {
   };
 
   const logout = (): void => {
-    // Stop location tracking if active
     stopDeliveryLocationTracking();
+    sessionStorage.removeItem('locationDenied');
+    sessionStorage.removeItem('locationErrorShown');
     
     dispatch(setUser(null));
     localStorage.removeItem("authToken");
@@ -262,6 +453,13 @@ export function useAuth() {
               token: token
             };
             dispatch(setUser(userData));
+            
+            // Restart location tracking for delivery users
+            if (userData.role === "delivery") {
+              startDeliveryLocationTracking(userData.userId, userData.userName).catch(() => {
+                // Silently fail
+              });
+            }
           } else {
             // Token expired, clear everything
             localStorage.removeItem("authToken");
@@ -301,6 +499,13 @@ export function useAuth() {
               
               sessionStorage.setItem("userProfile", JSON.stringify(sessionData));
               dispatch(setUser(userData));
+              
+              // Start location tracking for delivery users
+              if (userData.role === "delivery") {
+                startDeliveryLocationTracking(userData.userId, userData.userName).catch(() => {
+                  // Silently fail
+                });
+              }
             }
           }).catch((error) => {
             console.error("Failed to fetch user data:", error);
