@@ -5,6 +5,7 @@ import { Heart, Clock, Trash2, ShoppingCart, X } from "lucide-react";
 import { toast } from "sonner";
 import type { GetFavoriteDTO } from "@/api/user/types";
 import { getFoodImageUrl } from "@/lib/imageUtils";
+import { removeFromFavorite } from "@/api/user";
 
 interface FavoriteDialogProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface FavoriteDialogProps {
   favoriteItems: GetFavoriteDTO[];
   onRemoveFavorite?: (foodId: string) => void;
   onAddToCart?: (foodId: string) => void;
+  onRefresh?: () => void;
 }
 
 const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
@@ -20,10 +22,27 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
   favoriteItems,
   onRemoveFavorite,
   onAddToCart,
+  onRefresh,
 }) => {
   const handleAddToCart = (foodId: string, name: string) => {
     onAddToCart?.(foodId);
     toast.success(`${name} added to cart!`);
+  };
+
+  const handleRemoveFavorite = async (favoriteId: string | undefined) => {
+    if (!favoriteId) {
+      toast.error("Invalid favorite item");
+      return;
+    }
+    try {
+      await removeFromFavorite(favoriteId);
+      toast.success("Removed from favorites");
+      onRemoveFavorite?.(favoriteId);
+      onRefresh?.();
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+      toast.error("Failed to remove from favorites");
+    }
   };
 
   if (!open) return null;
@@ -87,7 +106,7 @@ const FavoriteDialog: React.FC<FavoriteDialogProps> = ({
                       variant="ghost"
                       size="icon"
                       className="absolute top-2 right-2 bg-white/90 hover:bg-white text-red-500 h-8 w-8 sm:h-10 sm:w-10"
-                      onClick={() => item.foodId && onRemoveFavorite?.(item.foodId)}
+                      onClick={() => handleRemoveFavorite(item.favoriteId)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

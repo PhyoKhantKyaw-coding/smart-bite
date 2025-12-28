@@ -55,6 +55,7 @@ export interface AddCartDTO {
 }
 
 export interface GetCartDTO {
+  cartId?: string;
   foodId?: string;
   name?: string;
   eachPrice?: number;
@@ -67,6 +68,7 @@ export interface GetCartDTO {
 }
 
 export interface GetFavoriteDTO {
+  favoriteId?: string;
   foodId?: string;
   name?: string;
   eachPrice?: number;
@@ -156,6 +158,10 @@ export interface CategoryDTO {
 
 export interface IDDTO {
   id?: string;
+}
+
+export interface RemoveItemDTO {
+  removeId?: string; // Can be CartId or FavoriteId
 }
 
 // API Response

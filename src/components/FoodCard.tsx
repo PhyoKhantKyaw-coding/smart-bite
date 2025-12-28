@@ -70,7 +70,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ food, onAddToCart, onToggleFavorite
               handleToggleFavorite();
             }}
           >
-            <Heart className={`w-4 h-4 ${isFavorite ? "fill-primary text-primary" : ""}`} />
+            <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
           </Button>
         </div>
         <div className="absolute top-2 left-2">

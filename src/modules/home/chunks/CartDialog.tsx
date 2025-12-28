@@ -54,11 +54,15 @@ const CartDialog: React.FC<CartDialogProps> = ({
     }
   };
 
-  const handleRemoveItem = async (foodId: string) => {
+  const handleRemoveItem = async (cartId: string | undefined) => {
+    if (!cartId) {
+      toast.error("Invalid cart item");
+      return;
+    }
     try {
-      await removeFromCart(foodId);
+      await removeFromCart(cartId);
       toast.success("Item removed from cart");
-      onRemoveItem?.(foodId);
+      onRemoveItem?.(cartId);
       onRefreshCart?.();
     } catch (error) {
       console.error('Error removing item:', error);
@@ -119,7 +123,7 @@ const CartDialog: React.FC<CartDialogProps> = ({
                   {/* Cart Items */}
                   <div className="space-y-4">
                     {cartItems.map((item) => (
-                      <Card key={item.foodId} className="overflow-hidden hover:shadow-xl transition-all duration-300 border border-orange-200 bg-white/90 backdrop-blur-sm hover:scale-[1.01] group">
+                      <Card key={item.cartId} className="overflow-hidden hover:shadow-xl transition-all duration-300 border border-orange-200 bg-white/90 backdrop-blur-sm hover:scale-[1.01] group">
                         <div className="flex flex-col sm:flex-row gap-4 p-4">
                         <img
                           src={getFoodImageUrl(item.foodImage)}
@@ -146,7 +150,7 @@ const CartDialog: React.FC<CartDialogProps> = ({
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => item.foodId && handleRemoveItem(item.foodId)}
+                                onClick={() => handleRemoveItem(item.cartId)}
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
                               >
                                 <Trash2 className="w-4 h-4" />

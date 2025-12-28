@@ -79,8 +79,10 @@ export const getCart = async (): Promise<ResponseDTO<GetCartDTO[]>> => {
   return response.data;
 };
 
-export const removeFromCart = async (foodId: string): Promise<ResponseDTO<boolean>> => {
-  const response = await axios.delete(`/cart/${foodId}`);
+export const removeFromCart = async (removeId: string): Promise<ResponseDTO<boolean>> => {
+  const response = await axios.delete('/cart/remove', {
+    data: { removeId }
+  });
   return response.data;
 };
 
@@ -93,6 +95,13 @@ export const addToFavorite = async (foodId: string): Promise<ResponseDTO<boolean
 
 export const getFavorites = async (): Promise<ResponseDTO<GetFavoriteDTO[]>> => {
   const response = await axios.get('/favorite');
+  return response.data;
+};
+
+export const removeFromFavorite = async (removeId: string): Promise<ResponseDTO<boolean>> => {
+  const response = await axios.delete('/favorite/remove', {
+    data: { removeId }
+  });
   return response.data;
 };
 

@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useDialogContext } from "@/contexts/DialogContext";
 import { useAuth } from "@/hooks/UseAuth";
-import { getAllFoods, getAllCategories, addToCart as addToCartAPI, addToFavorite as addToFavoriteAPI, getCart, getFavorites } from "@/api/user";
+import { getAllFoods, getAllCategories, addToCart as addToCartAPI, addToFavorite as addToFavoriteAPI, removeFromFavorite, getCart, getFavorites } from "@/api/user";
 import { getMyOrders } from "@/api/delivery";
 import type { GetFoodDTO, CategoryDTO, GetCartDTO, GetFavoriteDTO } from "@/api/user/types";
 
@@ -180,9 +180,11 @@ const didFetch = useRef(false);
     toast.info("Order feature coming soon!");
   };
 
-  const handleRemoveFavorite = (foodId: string) => {
+  const handleRemoveFavorite = async (foodId: string) => {
+    // Optimistically update UI
     setFavoriteItems(favoriteItems.filter((item) => item.foodId !== foodId));
-    toast.success("Removed from favorites");
+    // Refresh from API to ensure consistency
+    await fetchFavorites();
   };
 
   const handleAddToCartFromFavorite = async (foodId: string) => {
@@ -232,10 +234,12 @@ const didFetch = useRef(false);
   };
 
   const handleToggleFavorite = async (foodId: string) => {
-    const isFavorite = favoriteItems.some((item) => item.foodId === foodId);
+    const favoriteItem = favoriteItems.find((item) => item.foodId === foodId);
+    const isFavorite = !!favoriteItem;
     try {
-      if (isFavorite) {
-        setFavoriteItems(favoriteItems.filter((item) => item.foodId !== foodId));
+      if (isFavorite && favoriteItem?.favoriteId) {
+        await removeFromFavorite(favoriteItem.favoriteId);
+        await fetchFavorites();
         toast.success("Removed from favorites");
       } else {
         await addToFavoriteAPI(foodId);
@@ -310,6 +314,7 @@ const didFetch = useRef(false);
         favoriteItems={favoriteItems} 
         onRemoveFavorite={handleRemoveFavorite} 
         onAddToCart={handleAddToCartFromFavorite} 
+        onRefresh={fetchFavorites}
       />
       
       <OrderHistoryDialog 

@@ -13,7 +13,7 @@ import UserManagementView from "@/modules/admin/user-management/UserView";
 import StoreManagementView from "@/modules/admin/store-management/StoreManagementView";
 import DeliveryManagementView from "@/modules/admin/delivery-management/DeliveryManagementView";
 import OrderManagementView from "@/modules/admin/order-management/OrderManagementView";
-import DeliveryDashboardView from "@/modules/delivery/DeliveryDashboardView";
+import DeliveryView from "@/modules/delivery/DeliveryView";
 
 import { useAuth } from "@/hooks/UseAuth";
 import React, { ReactNode } from "react";
@@ -99,8 +99,8 @@ const router = createBrowserRouter([
         </ProtectedRoute>
       ),
       children: [
-        { path: "", element: <DeliveryDashboardView /> },
-        { path: "dashboard", element: <DeliveryDashboardView /> }
+        { path: "", element: <DeliveryView /> },
+        { path: "dashboard", element: <DeliveryView /> }
       ],
     },
   ]);

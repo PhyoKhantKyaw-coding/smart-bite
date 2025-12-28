@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,16 +40,6 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Auto-refresh every 10 seconds when dialog is open
-  useEffect(() => {
-    if (open && onRefresh) {
-      const interval = setInterval(() => {
-        onRefresh();
-      }, 10000); // 10 seconds
-      return () => clearInterval(interval);
-    }
-  }, [open, onRefresh]);
-
   const handleManualRefresh = async () => {
     if (onRefresh) {
       setIsRefreshing(true);
@@ -58,20 +48,35 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
     }
   };
 
-  const getStatusColor = (status: string | undefined) => {
-    switch (status?.toLowerCase()) {
-      case "pending":
-        return "bg-yellow-500";
-      case "preparing":
-        return "bg-blue-500";
-      case "delivering":
-        return "bg-purple-500";
-      case "delivered":
-        return "bg-green-500";
-      case "cancelled":
-        return "bg-red-500";
+  // Map backend status to display status
+  const mapStatus = (status: string | undefined) => {
+    switch ((status || '').toLowerCase()) {
+      case 'pending':
+      case 'preparing':
+        return 'Cooking';
+      case 'delivering':
+        return 'Delivering';
+      case 'delivered':
+        return 'Delivered';
+      case 'cancelled':
+        return 'Cancelled';
       default:
-        return "bg-gray-500";
+        return status || 'Unknown';
+    }
+  };
+
+  const getStatusColor = (status: string | undefined) => {
+    switch (mapStatus(status).toLowerCase()) {
+      case 'cooking':
+        return 'bg-blue-500';
+      case 'delivering':
+        return 'bg-purple-500';
+      case 'delivered':
+        return 'bg-green-500';
+      case 'cancelled':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
     }
   };
 
@@ -97,12 +102,12 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
     });
   };
 
-  const filteredOrders =
-    filterStatus === "All"
-      ? orders
-      : orders.filter((order) => order.status === filterStatus);
+  const statusOptions = ['All', 'Cooking', 'Delivering', 'Delivered', 'Cancelled'];
 
-  const statusOptions = ["All", "Pending", "Preparing", "Delivering", "Delivered", "Cancelled"];
+  const filteredOrders =
+    filterStatus === 'All'
+      ? orders
+      : orders.filter((order) => mapStatus(order.status) === filterStatus);
 
   if (!open) return null;
 
@@ -144,7 +149,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                 )}
               </div>
               <p className="text-base text-gray-600">
-                Track your orders and reorder your favorites {onRefresh && '• Auto-updates every 10s'}
+                Track your orders and reorder your favorites
               </p>
             </div>
 
@@ -215,7 +220,7 @@ const OrderHistoryDialog: React.FC<OrderHistoryDialogProps> = ({
                           <Badge
                             className={`${getStatusColor(order.status)} text-white px-2 sm:px-3 py-1 text-xs`}
                           >
-                            {order.status || 'Unknown'}
+                            {mapStatus(order.status)}
                           </Badge>
                           <Button
                             variant="ghost"
