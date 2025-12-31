@@ -17,27 +17,11 @@ import {
   CheckCircle,
   Clock,
   Truck,
+  XCircle,
 } from "lucide-react";
-
-interface OrderItem {
-  foodName: string;
-  quantity: number;
-  price: number;
-}
-
-interface DeliveryOrder {
-  orderId: string;
-  customerName: string;
-  customerPhone: string;
-  pickupAddress: string;
-  deliveryAddress: string;
-  orderDate: string;
-  totalAmount: number;
-  status: "New" | "Picked Up" | "In Transit" | "Delivered";
-  items: OrderItem[];
-  distance: string;
-  estimatedTime: string;
-}
+import { DeliveryOrder } from "@/types/delivery";
+import ClickableMap from "@/components/ClickableMap";
+import { useState, useEffect } from "react";
 
 interface OrderDetailDialogProps {
   open: boolean;
@@ -50,6 +34,39 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
   onOpenChange,
   order,
 }) => {
+  const [currentDeliveryPosition, setCurrentDeliveryPosition] = useState({
+    lat: order.deliveryLatitude || 0,
+    lng: order.deliveryLongitude || 0,
+  });
+
+  // Check if order is in active delivery status
+  const isActiveDelivery = 
+    order.status === "Delivery" || 
+    order.status === "delivering" ||
+    order.status === "In Transit" ||
+    order.status === "Picked Up";
+
+  // Real-time location update for active deliveries
+  useEffect(() => {
+    if (!isActiveDelivery || !open) return;
+
+    // Simulate real-time updates every 5 seconds
+    // In production, replace this with actual API calls or WebSocket
+    const intervalId = setInterval(() => {
+      // TODO: Replace with actual API call to get delivery person's current location
+      // Example: fetchDeliveryLocation(order.id).then(pos => setCurrentDeliveryPosition(pos))
+      
+      // Simulated position update - replace with actual API call
+      setCurrentDeliveryPosition(prev => ({
+        lat: prev.lat + (Math.random() - 0.5) * 0.001,
+        lng: prev.lng + (Math.random() - 0.5) * 0.001,
+      }));
+      console.log("Fetching real-time delivery location for order:", order.id);
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [isActiveDelivery, open, order.id]);
+
   const getStatusColor = (status: DeliveryOrder["status"]) => {
     switch (status) {
       case "New":
@@ -59,6 +76,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
       case "In Transit":
         return "bg-orange-500";
       case "Delivered":
+      case "delivered":
         return "bg-green-500";
       default:
         return "bg-gray-500";
@@ -86,7 +104,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
             <div>
               <DialogTitle className="text-xl md:text-2xl">Order Details</DialogTitle>
               <DialogDescription className="text-sm mt-1">
-                Order ID: {order.orderId}
+                Order ID: {order.orderNumber || order.id}
               </DialogDescription>
             </div>
             <Badge className={`${getStatusColor(order.status)} flex items-center gap-2`}>
@@ -127,6 +145,32 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
               <MapPin className="w-5 h-5" />
               Delivery Information
             </h3>
+            
+            {/* Delivery Route Map - Always show map, but hide delivery location for delivered orders */}
+            <div className="w-full rounded-lg overflow-hidden border" style={{ height: '200px' }}>
+              <ClickableMap
+                latitude={order.storeLatitude || 16.8661}
+                longitude={order.storeLongitude || 96.1951}
+                clickable={false}
+                showStoreToDestinationRoute={true}
+                showRoute={isActiveDelivery && !!currentDeliveryPosition.lat && !!currentDeliveryPosition.lng}
+                routeColor="#3b82f6"
+                deliveryPosition={
+                  isActiveDelivery && currentDeliveryPosition.lat && currentDeliveryPosition.lng
+                    ? { lat: currentDeliveryPosition.lat, lng: currentDeliveryPosition.lng }
+                    : undefined
+                }
+                destinationPosition={
+                  order.orderLatitude && order.orderLongitude
+                    ? { lat: order.orderLatitude, lng: order.orderLongitude }
+                    : undefined
+                }
+                storeName={order.pickupAddress || "Pickup Location"}
+                deliveryManName={order.assignedDriver || "Delivery Person"}
+                destinationName={order.deliveryAddress || "Delivery Location"}
+              />
+            </div>
+            
             <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-1" />
@@ -175,7 +219,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                 <tbody>
                   {order.items.map((item, index) => (
                     <tr key={index} className={index !== order.items.length - 1 ? "border-b" : ""}>
-                      <td className="p-3 font-medium">{item.foodName}</td>
+                      <td className="p-3 font-medium">{item.name}</td>
                       <td className="p-3 text-center">{item.quantity}</td>
                       <td className="p-3 text-right">{item.price.toLocaleString()} MMK</td>
                       <td className="p-3 text-right font-medium">
@@ -204,23 +248,23 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
             <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Close
             </Button>
-            {order.status === "New" && (
+            {(order.status === "New" || order.status === "Delivery") && (
               <Button className="gradient-primary w-full sm:w-auto">
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Accept Order
               </Button>
             )}
-            {order.status === "Picked Up" && (
-              <Button className="gradient-primary w-full sm:w-auto">
-                <Truck className="w-4 h-4 mr-2" />
-                Start Delivery
-              </Button>
-            )}
-            {order.status === "In Transit" && (
-              <Button className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Mark as Delivered
-              </Button>
+            {order.status === "delivering" && (
+              <>
+                <Button variant="destructive" className="w-full sm:w-auto">
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  User Accept
+                </Button>
+              </>
             )}
           </div>
         </div>

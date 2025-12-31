@@ -8,6 +8,7 @@ import type {
   GetNearbyDeliveriesRequest,
   DeliveryLocationDTO,
 } from './types.d';
+import type { DeliveryOrder, DeliveredOrder } from '@/types/delivery';
 
 interface ResponseDTO<T> {
   status: number;
@@ -96,7 +97,7 @@ export async function getMyOrders(): Promise<ResponseDTO<Record<string, unknown>
 }
 
 // Get Orders by Status
-export async function getOrdersByStatus(status: string): Promise<ResponseDTO<Record<string, unknown>[]>> {
+export async function getOrdersByStatus(status: string): Promise<ResponseDTO<DeliveryOrder[] | DeliveredOrder[]>> {
   const response = await axios.get(`/api/Delivery/status/${status}`);
   return response.data;
 }
@@ -116,6 +117,12 @@ export async function updateTracking(trackingData: Record<string, unknown>): Pro
 // Get Real-Time Tracking
 export async function getTracking(orderId: string): Promise<ResponseDTO<RealTimeOrderTrackingDTO>> {
   const response = await axios.get(`/api/Delivery/tracking/${orderId}`);
+  return response.data;
+}
+
+// Update Order Status
+export async function updateOrderStatus(id: string, status: string): Promise<ResponseDTO<null>> {
+  const response = await axios.post(`/api/Delivery/status/update?id=${id}&status=${status}`);
   return response.data;
 }
 

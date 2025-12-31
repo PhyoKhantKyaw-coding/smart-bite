@@ -4,29 +4,20 @@ import Footer from "@/components/Footer";
 import { DialogProvider, useDialogContext } from "@/contexts/DialogContext";
 import { useCallback, useState } from "react";
 import { useAuth } from "@/hooks/UseAuth";
-import { getCart, getFavorites, addToCart as addToCartAPI, removeFromCart } from "@/api/user";
-import { getMyOrders } from "@/api/delivery";
+import { getCart, getFavorites, addToCart as addToCartAPI } from "@/api/user";
 import CartDialog from "@/modules/home/chunks/CartDialog";
 import FavoriteDialog from "@/modules/home/chunks/FavoriteDialog";
-import OrderHistoryDialog from "@/modules/home/chunks/OrderHistoryDialog";
+import OrdersDialog from "@/modules/home/chunks/OrdersDialog";
 import type { GetCartDTO, GetFavoriteDTO } from "@/api/user/types";
 import { toast } from "sonner";
 
-interface OrderDTO {
-  orderId: string;
-  cartDTOs?: Array<{
-    foodId?: string;
-    quantity?: number;
-  }>;
-}
-
 const UserLayoutContent = () => {
   const { user } = useAuth();
-  const { showCartDialog, setShowCartDialog, showFavoriteDialog, setShowFavoriteDialog, showOrderHistoryDialog, setShowOrderHistoryDialog } = useDialogContext();
+  const { showCartDialog, setShowCartDialog, showFavoriteDialog, setShowFavoriteDialog } = useDialogContext();
   
   const [cartItems, setCartItems] = useState<GetCartDTO[]>([]);
   const [favoriteItems, setFavoriteItems] = useState<GetFavoriteDTO[]>([]);
-  const [orderHistory, setOrderHistory] = useState<OrderDTO[]>([]);
+  const [showOrdersDialog, setShowOrdersDialog] = useState(false);
 
   const fetchCart = useCallback(async () => {
     if (!user || user.role !== 'user') return;
@@ -56,20 +47,6 @@ const UserLayoutContent = () => {
     }
   }, [user]);
 
-  const fetchOrders = useCallback(async () => {
-    if (!user || user.role !== 'user') return;
-    
-    try {
-      const response = await getMyOrders();
-      if (response && response.data) {
-        const ordersData = Array.isArray(response.data) ? response.data as unknown as OrderDTO[] : [];
-        setOrderHistory(ordersData);
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    }
-  }, [user]);
-
   const handleCartClick = useCallback(async () => {
     await fetchCart();
     setShowCartDialog(true);
@@ -81,14 +58,14 @@ const UserLayoutContent = () => {
   }, [fetchFavorites, setShowFavoriteDialog]);
 
   const handleOrderHistoryClick = useCallback(async () => {
-    await fetchOrders();
-    setShowOrderHistoryDialog(true);
-  }, [fetchOrders, setShowOrderHistoryDialog]);
+    // Open the new OrdersDialog instead of the old OrderHistoryDialog
+    setShowOrdersDialog(true);
+  }, []);
 
   const handleHomeClick = () => {
     setShowCartDialog(false);
     setShowFavoriteDialog(false);
-    setShowOrderHistoryDialog(false);
+    setShowOrdersDialog(false);
   };
 
   const handleRemoveCartItem = (foodId: string) => {
@@ -115,33 +92,6 @@ const UserLayoutContent = () => {
       console.error('Error:', error);
       toast.error("Failed to add to cart");
     }
-  };
-
-  const handleReorder = async (orderId: string) => {
-    try {
-      const order = orderHistory.find((o: OrderDTO) => o.orderId === orderId);
-      if (order && order.cartDTOs) {
-        for (const item of order.cartDTOs) {
-          if (item.foodId) {
-            await addToCartAPI({ 
-              foodId: item.foodId, 
-              quantity: item.quantity || 1, 
-              topics: [] 
-            });
-          }
-        }
-        await fetchCart();
-        toast.success("Items added to cart!");
-        setShowOrderHistoryDialog(false);
-      }
-    } catch (error) {
-      console.error('Error reordering:', error);
-      toast.error("Failed to reorder items");
-    }
-  };
-
-  const handleRefreshOrders = async () => {
-    await fetchOrders();
   };
 
   return (
@@ -177,12 +127,11 @@ const UserLayoutContent = () => {
         onAddToCart={handleAddToCartFromFavorite} 
       />
       
-      <OrderHistoryDialog 
-        open={showOrderHistoryDialog} 
-        onOpenChange={setShowOrderHistoryDialog} 
-        orders={orderHistory} 
-        onReorder={handleReorder} 
-        onRefresh={handleRefreshOrders} 
+
+
+      <OrdersDialog 
+        open={showOrdersDialog} 
+        onOpenChange={setShowOrdersDialog} 
       />
     </div>
   );

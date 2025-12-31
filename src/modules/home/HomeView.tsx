@@ -3,7 +3,6 @@ import HeroSection from "./chunks/HeroSection";
 import FoodCard from "@/components/FoodCard";
 import CartDialog from "./chunks/CartDialog";
 import FavoriteDialog from "./chunks/FavoriteDialog";
-import OrderHistoryDialog from "./chunks/OrderHistoryDialog";
 import ProductDetailDialog from "./chunks/ProductDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,16 +11,8 @@ import { toast } from "sonner";
 import { useDialogContext } from "@/contexts/DialogContext";
 import { useAuth } from "@/hooks/UseAuth";
 import { getAllFoods, getAllCategories, addToCart as addToCartAPI, addToFavorite as addToFavoriteAPI, removeFromFavorite, getCart, getFavorites } from "@/api/user";
-import { getMyOrders } from "@/api/delivery";
 import type { GetFoodDTO, CategoryDTO, GetCartDTO, GetFavoriteDTO } from "@/api/user/types";
 
-interface OrderDTO {
-  orderId: string;
-  cartDTOs?: Array<{
-    foodId?: string;
-    quantity?: number;
-  }>;
-}
 const Home = () => {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -34,29 +25,9 @@ const Home = () => {
   const [favoriteItems, setFavoriteItems] = useState<GetFavoriteDTO[]>([]);
   const [loadingFoods, setLoadingFoods] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const { showCartDialog, setShowCartDialog, showFavoriteDialog, setShowFavoriteDialog, showOrderHistoryDialog, setShowOrderHistoryDialog } = useDialogContext();
+  const { showCartDialog, setShowCartDialog, showFavoriteDialog, setShowFavoriteDialog } = useDialogContext();
 
-  const [orderHistory, setOrderHistory] = useState<OrderDTO[]>([]);
-
-  const fetchOrders = useCallback(async () => {
-    if (!user || user.role !== 'user') return;
-    
-    try {
-      const response = await getMyOrders();
-      if (response && response.data) {
-        const ordersData = Array.isArray(response.data) ? response.data as unknown as OrderDTO[] : [];
-        setOrderHistory(ordersData);
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    }
-  }, [user]);
-
-  const handleRefreshOrders = async () => {
-    await fetchOrders();
-  };
-
-const didFetch = useRef(false);
+  const didFetch = useRef(false);
   const fetchFoods = async (params?: { query?: string; catId?: string }) => {
     setLoadingFoods(true);
     try {
@@ -198,30 +169,6 @@ const didFetch = useRef(false);
     }
   };
 
-  const handleReorder = async (orderId: string) => {
-    try {
-      const order = orderHistory.find((o: OrderDTO) => o.orderId === orderId);
-      if (order && order.cartDTOs) {
-        // Add all items from the order back to cart
-        for (const item of order.cartDTOs) {
-          if (item.foodId) {
-            await addToCartAPI({ 
-              foodId: item.foodId, 
-              quantity: item.quantity || 1, 
-              topics: [] 
-            });
-          }
-        }
-        await fetchCart();
-        toast.success("Items added to cart!");
-        setShowOrderHistoryDialog(false);
-      }
-    } catch (error) {
-      console.error('Error reordering:', error);
-      toast.error("Failed to reorder items");
-    }
-  };
-
   const handleAddToCart = async (foodId: string) => {
     try {
       await addToCartAPI({ foodId, quantity: 1, topics: [] });
@@ -317,18 +264,11 @@ const didFetch = useRef(false);
         onRefresh={fetchFavorites}
       />
       
-      <OrderHistoryDialog 
-        open={showOrderHistoryDialog} 
-        onOpenChange={setShowOrderHistoryDialog} 
-        orders={orderHistory} 
-        onReorder={handleReorder} 
-        onRefresh={handleRefreshOrders} 
-      />
+
 
       {/* Product detail dialog can show over everything */}
       {selectedFoodId && (<ProductDetailDialog open={showProductDetail} onOpenChange={setShowProductDetail} foodId={selectedFoodId} onAddToFavorite={handleToggleFavorite} onRefreshCart={fetchCart} />)}
     </>
   );
 };
-
 export default Home;

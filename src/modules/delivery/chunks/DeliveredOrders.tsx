@@ -12,132 +12,49 @@ import {
 } from "@/components/ui/table";
 import { CheckCircle, Eye } from "lucide-react";
 import OrderDetailDialog from "./OrderDetailDialog";
+import { DeliveredOrder } from "@/types/delivery";
 
-interface OrderItem {
-  foodName: string;
-  quantity: number;
-  price: number;
+interface DeliveredOrdersProps {
+  orders: DeliveredOrder[];
+  loading: boolean;
 }
 
-interface DeliveryOrder {
-  orderId: string;
-  customerName: string;
-  customerPhone: string;
-  pickupAddress: string;
-  deliveryAddress: string;
-  orderDate: string;
-  totalAmount: number;
-  status: "New" | "Picked Up" | "In Transit" | "Delivered";
-  items: OrderItem[];
-  distance: string;
-  estimatedTime: string;
-}
-
-const DeliveredOrders = () => {
-  const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
+const DeliveredOrders = ({ orders, loading }: DeliveredOrdersProps) => {
+  const [selectedOrder, setSelectedOrder] = useState<DeliveredOrder | null>(null);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
 
-  // Mock delivered orders
-  const [deliveredOrders] = useState<DeliveryOrder[]>([
-    {
-      orderId: "ORD-095",
-      customerName: "Ma Su Su",
-      customerPhone: "+95 9666777888",
-      pickupAddress: "Fast Food Corner, Yangon",
-      deliveryAddress: "321 Cedar Lane, Yangon",
-      orderDate: "2025-11-30 10:30 AM",
-      totalAmount: 22000,
-      status: "Delivered",
-      distance: "3.5 km",
-      estimatedTime: "Completed",
-      items: [
-        { foodName: "Burger Combo", quantity: 1, price: 12000 },
-        { foodName: "French Fries", quantity: 2, price: 5000 },
-      ],
-    },
-    {
-      orderId: "ORD-094",
-      customerName: "U Tin Tin",
-      customerPhone: "+95 9222333444",
-      pickupAddress: "Noodle House, Yangon",
-      deliveryAddress: "654 Maple Drive, Yangon",
-      orderDate: "2025-11-30 09:15 AM",
-      totalAmount: 15000,
-      status: "Delivered",
-      distance: "2.8 km",
-      estimatedTime: "Completed",
-      items: [{ foodName: "Shan Noodles", quantity: 3, price: 5000 }],
-    },
-    {
-      orderId: "ORD-093",
-      customerName: "Ma Nilar",
-      customerPhone: "+95 9888999000",
-      pickupAddress: "Coffee Shop, Downtown",
-      deliveryAddress: "987 Birch Avenue, Yangon",
-      orderDate: "2025-11-30 08:45 AM",
-      totalAmount: 12000,
-      status: "Delivered",
-      distance: "1.5 km",
-      estimatedTime: "Completed",
-      items: [
-        { foodName: "Cappuccino", quantity: 2, price: 4000 },
-        { foodName: "Croissant", quantity: 2, price: 2000 },
-      ],
-    },
-    {
-      orderId: "ORD-092",
-      customerName: "Ko Zaw Min",
-      customerPhone: "+95 9555666777",
-      pickupAddress: "Tea House, Yangon",
-      deliveryAddress: "234 Palm Street, Yangon",
-      orderDate: "2025-11-30 08:00 AM",
-      totalAmount: 8000,
-      status: "Delivered",
-      distance: "1.0 km",
-      estimatedTime: "Completed",
-      items: [
-        { foodName: "Milk Tea", quantity: 2, price: 3000 },
-        { foodName: "Samosa", quantity: 4, price: 500 },
-      ],
-    },
-    {
-      orderId: "ORD-091",
-      customerName: "Daw Thandar",
-      customerPhone: "+95 9444555666",
-      pickupAddress: "Shan Kitchen, Yangon",
-      deliveryAddress: "567 Beach Road, Yangon",
-      orderDate: "2025-11-29 06:30 PM",
-      totalAmount: 35000,
-      status: "Delivered",
-      distance: "4.2 km",
-      estimatedTime: "Completed",
-      items: [
-        { foodName: "Shan Rice", quantity: 2, price: 12000 },
-        { foodName: "Tofu Salad", quantity: 2, price: 5500 },
-      ],
-    },
-  ]);
+  console.log("DeliveredOrders - Received orders:", orders);
+  console.log("DeliveredOrders - Orders length:", orders.length);
 
-  const getStatusColor = (status: DeliveryOrder["status"]) => {
+  const getStatusColor = (status: DeliveredOrder["status"]) => {
     switch (status) {
       case "Delivered":
+      case "delivered":
         return "bg-green-500";
       default:
         return "bg-gray-500";
     }
   };
 
-  const handleViewOrder = (order: DeliveryOrder) => {
+  const handleViewOrder = (order: DeliveredOrder) => {
     setSelectedOrder(order);
     setShowOrderDetail(true);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-muted-foreground">Loading orders...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
           <CheckCircle className="w-6 h-6 text-green-500" />
-          Delivered Orders ({deliveredOrders.length})
+          Delivered Orders ({orders.length})
         </h2>
       </div>
 
@@ -157,28 +74,28 @@ const DeliveredOrders = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {deliveredOrders.length === 0 ? (
+              {orders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No delivery history
                   </TableCell>
                 </TableRow>
               ) : (
-                deliveredOrders.map((order) => (
-                  <TableRow key={order.orderId}>
-                    <TableCell className="font-medium">{order.orderId}</TableCell>
+                orders.map((order, index) => (
+                  <TableRow key={order.id || `delivered-order-${index}`}>
+                    <TableCell className="font-medium">{order.orderNumber || order.id || 'N/A'}</TableCell>
                     <TableCell>
-                      <div>{order.customerName}</div>
-                      <div className="text-xs text-muted-foreground">{order.customerPhone}</div>
+                      <div>{order.customerName || 'N/A'}</div>
+                      <div className="text-xs text-muted-foreground">{order.customerPhone || 'N/A'}</div>
                     </TableCell>
-                    <TableCell className="text-sm">{order.orderDate}</TableCell>
-                    <TableCell className="text-sm">{order.distance}</TableCell>
+                    <TableCell className="text-sm">{order.orderDate || 'N/A'}</TableCell>
+                    <TableCell className="text-sm">{order.distance || 'N/A'}</TableCell>
                     <TableCell className="font-semibold">
-                      {order.totalAmount.toLocaleString()} MMK
+                      {order.totalAmount?.toLocaleString() || '0'} MMK
                     </TableCell>
                     <TableCell>
                       <Badge className={`${getStatusColor(order.status)}`}>
-                        {order.status}
+                        {order.status || 'N/A'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -201,40 +118,40 @@ const DeliveredOrders = () => {
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
-        {deliveredOrders.length === 0 ? (
+        {orders.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
               No delivery history
             </CardContent>
           </Card>
         ) : (
-          deliveredOrders.map((order) => (
-            <Card key={order.orderId}>
+          orders.map((order, index) => (
+            <Card key={order.id || `delivered-mobile-${index}`}>
               <CardContent className="p-4">
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between">
+                  <div className="flex-wrap justify-between">
                     <div>
-                      <h3 className="font-semibold">{order.orderId}</h3>
-                      <p className="text-sm text-muted-foreground">{order.customerName}</p>
-                      <p className="text-xs text-muted-foreground">{order.customerPhone}</p>
+                      <h3 className="font-semibold">{order.orderNumber || order.id || 'N/A'}</h3>
+                      <p className="text-sm text-muted-foreground">{order.customerName || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">{order.customerPhone || 'N/A'}</p>
                     </div>
                     <Badge className={`${getStatusColor(order.status)}`}>
-                      {order.status}
+                      {order.status || 'N/A'}
                     </Badge>
                   </div>
 
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date:</span>
-                      <span>{order.orderDate}</span>
+                      <span>{order.orderDate || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Distance:</span>
-                      <span>{order.distance}</span>
+                      <span>{order.distance || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Amount:</span>
-                      <span className="font-semibold">{order.totalAmount.toLocaleString()} MMK</span>
+                      <span className="font-semibold">{order.totalAmount?.toLocaleString() || '0'} MMK</span>
                     </div>
                   </div>
 
