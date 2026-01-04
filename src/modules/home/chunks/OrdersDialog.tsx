@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { getOrdersByStatus, getVoucher } from "@/api/delivery";
-import OrderTrackingDialog from "./OrderTrackingDialog";
+import OrderTrackingMapDialog from "@/components/OrderTrackingMapDialog";
 import VoucherDialog from "./VoucherDialog";
 
 interface OrderItem {
@@ -48,7 +48,7 @@ const OrdersDialog: React.FC<OrdersDialogProps> = ({ open, onOpenChange }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [trackingOrder, setTrackingOrder] = useState<Order | null>(null);
-  const [showTracking, setShowTracking] = useState(false);
+  const [showTrackingDialog, setShowTrackingDialog] = useState(false);
   const [voucherData, setVoucherData] = useState<Order | null>(null);
   const [showVoucher, setShowVoucher] = useState(false);
 
@@ -97,7 +97,7 @@ const OrdersDialog: React.FC<OrdersDialogProps> = ({ open, onOpenChange }) => {
 
   const handleTrackOrder = (order: Order) => {
     setTrackingOrder(order);
-    setShowTracking(true);
+    setShowTrackingDialog(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -302,12 +302,25 @@ const OrdersDialog: React.FC<OrdersDialogProps> = ({ open, onOpenChange }) => {
         </div>
       </div>
 
-      {/* Order Tracking Dialog */}
-      {showTracking && trackingOrder && (
-        <OrderTrackingDialog
-          open={showTracking}
-          onOpenChange={setShowTracking}
-          order={trackingOrder}
+      {/* Order Tracking Map Dialog */}
+      {showTrackingDialog && trackingOrder && (
+        <OrderTrackingMapDialog
+          open={showTrackingDialog}
+          onOpenChange={setShowTrackingDialog}
+          orderId={trackingOrder.id}
+          orderNumber={trackingOrder.orderNumber}
+          storeLatitude={trackingOrder.storeLatitude}
+          storeLongitude={trackingOrder.storeLongitude}
+          pickupAddress="Store Location"
+          orderLatitude={trackingOrder.orderLatitude}
+          orderLongitude={trackingOrder.orderLongitude}
+          deliveryAddress={trackingOrder.deliveryAddress}
+          deliveryLatitude={trackingOrder.deliveryLatitude}
+          deliveryLongitude={trackingOrder.deliveryLongitude}
+          deliveryId={trackingOrder.assignedDriver}
+          deliveryName={trackingOrder.assignedDriver}
+          deliveryPhone={trackingOrder.customerPhone}
+          status={trackingOrder.status}
         />
       )}
 

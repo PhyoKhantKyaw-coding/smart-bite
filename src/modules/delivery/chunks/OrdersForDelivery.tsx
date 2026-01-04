@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, DollarSign, Package, Phone, User, CheckCircle, XCircle } from "lucide-react";
-import OrderDetailDialog from "./OrderDetailDialog";
+import { MapPin, Clock, DollarSign, Package, Phone, User, CheckCircle, XCircle, Navigation } from "lucide-react";
+import OrderTrackingMapDialog from "@/components/OrderTrackingMapDialog";
 import { DeliveryOrder } from "@/types/delivery";
 import { updateOrderStatus } from "@/api/delivery";
 import { toast } from "sonner";
@@ -16,7 +16,7 @@ interface OrdersForDeliveryProps {
 
 const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliveryProps) => {
   const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
-  const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const [showTrackingDialog, setShowTrackingDialog] = useState(false);
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
   const [localOrders, setLocalOrders] = useState<DeliveryOrder[]>(orders);
 
@@ -98,7 +98,7 @@ const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliver
 
   const handleViewOrder = (order: DeliveryOrder) => {
     setSelectedOrder(order);
-    setShowOrderDetail(true);
+    setShowTrackingDialog(true);
   };
 
   // Use API data directly
@@ -196,7 +196,8 @@ const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliver
                         onClick={() => handleViewOrder(order)}
                         className="flex-1 sm:flex-initial"
                       >
-                        View Details
+                        <Navigation className="w-4 h-4 mr-2" />
+                        Track Order
                       </Button>
                      <Button
                             size="sm"
@@ -305,7 +306,8 @@ const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliver
                         onClick={() => handleViewOrder(order)}
                         className="flex-1 sm:flex-initial"
                       >
-                        View Details
+                        <Navigation className="w-4 h-4 mr-2" />
+                        Track Order
                       </Button>
                       {order.status === "delivering" ? (
                         <>
@@ -339,12 +341,25 @@ const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliver
         )}
       </div>
 
-      {/* Order Detail Dialog */}
+      {/* Order Tracking Map Dialog */}
       {selectedOrder && (
-        <OrderDetailDialog
-          open={showOrderDetail}
-          onOpenChange={setShowOrderDetail}
-          order={selectedOrder}
+        <OrderTrackingMapDialog
+          open={showTrackingDialog}
+          onOpenChange={setShowTrackingDialog}
+          orderId={selectedOrder.id}
+          orderNumber={selectedOrder.orderNumber}
+          storeLatitude={selectedOrder.storeLatitude || 16.8661}
+          storeLongitude={selectedOrder.storeLongitude || 96.1951}
+          pickupAddress={selectedOrder.pickupAddress}
+          orderLatitude={selectedOrder.orderLatitude || 16.8661}
+          orderLongitude={selectedOrder.orderLongitude || 96.1951}
+          deliveryAddress={selectedOrder.deliveryAddress}
+          deliveryLatitude={selectedOrder.deliveryLatitude}
+          deliveryLongitude={selectedOrder.deliveryLongitude}
+          deliveryId={selectedOrder.assignedDriver}
+          deliveryName={selectedOrder.assignedDriver || "Delivery Person"}
+          deliveryPhone={selectedOrder.customerPhone}
+          status={selectedOrder.status}
         />
       )}
     </div>
