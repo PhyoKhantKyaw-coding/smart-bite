@@ -1,4 +1,5 @@
 import * as signalR from "@microsoft/signalr";
+import axios from "axios";
 
 export interface OrderDeliveryLocationUpdate {
   orderId: string;
@@ -21,7 +22,7 @@ class SignalRService {
 
   private initializeConnection() {
     // Get the API base URL from environment or use default (same as axios)
-    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'https://localhost:7112/').replace(/\/$/, '');
+    const apiBaseUrl = (axios.defaults.baseURL || 'https://localhost:7112/').replace(/\/$/, '');
     const hubUrl = `${apiBaseUrl}/deliveryTrackingHub`;
 
     console.log("SignalR Hub URL:", hubUrl); // Debug log
