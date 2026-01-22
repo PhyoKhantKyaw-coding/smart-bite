@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {
   Clock,
   Package,
   Truck,
+  Loader2,
 } from "lucide-react";
 import {
   Table,
@@ -21,199 +22,115 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from "sonner";
 import OrderDetailDialog from "./chunks/OrderDetailDialog";
-
-interface OrderItem {
-  foodId: string;
-  foodName: string;
-  quantity: number;
-  price: number;
-}
-
-interface Order {
-  orderId: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  orderDate: string;
-  deliveryAddress: string;
-  totalAmount: number;
-  status: "Pending" | "Confirmed" | "Preparing" | "Out for Delivery" | "Delivered" | "Cancelled";
-  paymentMethod: string;
-  items: OrderItem[];
-  deliveryPerson?: string;
-  storeName: string;
-}
+import { getAllOrders } from "@/api/order";
+import { GetOrderDTO } from "@/api/order/types";
 
 const OrderManagementView = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<GetOrderDTO | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [orders, setOrders] = useState<GetOrderDTO[]>([]);
+  const [loading, setLoading] = useState(false);
+  const pageSize = 10;
+  const hasFetched = useRef(false);
 
-  // Mock data
-  const [orders] = useState<Order[]>([
-    {
-      orderId: "ORD-001",
-      customerName: "John Doe",
-      customerPhone: "+95 9123456789",
-      customerEmail: "john@example.com",
-      orderDate: "2025-11-30 10:30 AM",
-      deliveryAddress: "123 Main Street, Yangon",
-      totalAmount: 25000,
-      status: "Pending",
-      paymentMethod: "Cash on Delivery",
-      storeName: "Downtown Branch",
-      items: [
-        { foodId: "F001", foodName: "Chicken Burger", quantity: 2, price: 8000 },
-        { foodId: "F002", foodName: "French Fries", quantity: 1, price: 3000 },
-        { foodId: "F003", foodName: "Coca Cola", quantity: 2, price: 3000 },
-      ],
-    },
-    {
-      orderId: "ORD-002",
-      customerName: "Jane Smith",
-      customerPhone: "+95 9987654321",
-      customerEmail: "jane@example.com",
-      orderDate: "2025-11-30 09:15 AM",
-      deliveryAddress: "456 Oak Avenue, Mandalay",
-      totalAmount: 32000,
-      status: "Confirmed",
-      paymentMethod: "Credit Card",
-      storeName: "Mandalay Store",
-      deliveryPerson: "U Aung Aung",
-      items: [
-        { foodId: "F004", foodName: "Pizza Margherita", quantity: 1, price: 18000 },
-        { foodId: "F005", foodName: "Caesar Salad", quantity: 1, price: 8000 },
-        { foodId: "F006", foodName: "Iced Tea", quantity: 2, price: 3000 },
-      ],
-    },
-    {
-      orderId: "ORD-003",
-      customerName: "Mike Johnson",
-      customerPhone: "+95 9456789123",
-      customerEmail: "mike@example.com",
-      orderDate: "2025-11-30 08:45 AM",
-      deliveryAddress: "789 Pine Road, Naypyidaw",
-      totalAmount: 45000,
-      status: "Out for Delivery",
-      paymentMethod: "E-Wallet",
-      storeName: "City Center Store",
-      deliveryPerson: "Daw Mya Mya",
-      items: [
-        { foodId: "F007", foodName: "Sushi Platter", quantity: 1, price: 35000 },
-        { foodId: "F008", foodName: "Miso Soup", quantity: 2, price: 5000 },
-      ],
-    },
-    {
-      orderId: "ORD-004",
-      customerName: "Sarah Williams",
-      customerPhone: "+95 9321654987",
-      customerEmail: "sarah@example.com",
-      orderDate: "2025-11-29 07:20 PM",
-      deliveryAddress: "321 Elm Street, Yangon",
-      totalAmount: 28000,
-      status: "Delivered",
-      paymentMethod: "Cash on Delivery",
-      storeName: "Downtown Branch",
-      deliveryPerson: "Ko Zaw Zaw",
-      items: [
-        { foodId: "F009", foodName: "Beef Steak", quantity: 1, price: 22000 },
-        { foodId: "F010", foodName: "Mineral Water", quantity: 2, price: 3000 },
-      ],
-    },
-    {
-      orderId: "ORD-005",
-      customerName: "David Brown",
-      customerPhone: "+95 9789456123",
-      customerEmail: "david@example.com",
-      orderDate: "2025-11-29 06:00 PM",
-      deliveryAddress: "654 Maple Drive, Mandalay",
-      totalAmount: 15000,
-      status: "Cancelled",
-      paymentMethod: "Credit Card",
-      storeName: "Mandalay Store",
-      items: [
-        { foodId: "F011", foodName: "Pasta Carbonara", quantity: 1, price: 12000 },
-        { foodId: "F012", foodName: "Garlic Bread", quantity: 1, price: 3000 },
-      ],
-    },
-    {
-      orderId: "ORD-006",
-      customerName: "Emily Davis",
-      customerPhone: "+95 9147258369",
-      customerEmail: "emily@example.com",
-      orderDate: "2025-11-30 11:00 AM",
-      deliveryAddress: "987 Cedar Lane, Yangon",
-      totalAmount: 38000,
-      status: "Preparing",
-      paymentMethod: "E-Wallet",
-      storeName: "Downtown Branch",
-      items: [
-        { foodId: "F013", foodName: "Tom Yum Soup", quantity: 2, price: 8000 },
-        { foodId: "F014", foodName: "Pad Thai", quantity: 2, price: 11000 },
-      ],
-    },
-  ]);
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const response = await getAllOrders(1, pageSize);
+      console.log("Order API Response:", response);
+      
+      // Backend returns status: 0 for success, not "Successful"
+      if (response.status === 0 && response.data?.data) {
+        setOrders(response.data.data);
+        console.log("Orders loaded:", response.data.data.length);
+      } else {
+        toast.error(response.message || "Failed to fetch orders");
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      toast.error("Failed to fetch orders");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const getStatusColor = (status: Order["status"]) => {
-    switch (status) {
-      case "Pending":
+  useEffect(() => {
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchOrders();
+    }
+  }, []);
+
+  const getStatusColor = (status?: string) => {
+    const lowerStatus = status?.toLowerCase();
+    switch (lowerStatus) {
+      case "pending":
         return "bg-yellow-500";
-      case "Confirmed":
+      case "confirmed":
         return "bg-blue-500";
-      case "Preparing":
+      case "cooking":
+      case "preparing":
         return "bg-purple-500";
-      case "Out for Delivery":
+      case "delivery":
+      case "delivering":
+      case "out for delivery":
         return "bg-orange-500";
-      case "Delivered":
+      case "delivered":
         return "bg-green-500";
-      case "Cancelled":
+      case "cancelled":
         return "bg-red-500";
       default:
         return "bg-gray-500";
     }
   };
 
-  const getStatusIcon = (status: Order["status"]) => {
-    switch (status) {
-      case "Pending":
+  const getStatusIcon = (status?: string) => {
+    const lowerStatus = status?.toLowerCase();
+    switch (lowerStatus) {
+      case "pending":
         return <Clock className="w-4 h-4" />;
-      case "Confirmed":
+      case "confirmed":
         return <CheckCircle className="w-4 h-4" />;
-      case "Preparing":
+      case "cooking":
+      case "preparing":
         return <Package className="w-4 h-4" />;
-      case "Out for Delivery":
+      case "delivery":
+      case "delivering":
+      case "out for delivery":
         return <Truck className="w-4 h-4" />;
-      case "Delivered":
+      case "delivered":
         return <CheckCircle className="w-4 h-4" />;
-      case "Cancelled":
+      case "cancelled":
         return <XCircle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
     }
   };
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerPhone.includes(searchQuery);
-    const matchesStatus = statusFilter === "All" || order.status === statusFilter;
+      order.orderId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.storeName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "All" || order.status?.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
-  const handleViewDetails = (order: Order) => {
+  const handleViewDetails = (order: GetOrderDTO) => {
     setSelectedOrder(order);
     setShowDetailDialog(true);
   };
 
   const statusCounts = {
     All: orders.length,
-    Pending: orders.filter((o) => o.status === "Pending").length,
-    Confirmed: orders.filter((o) => o.status === "Confirmed").length,
-    Preparing: orders.filter((o) => o.status === "Preparing").length,
-    "Out for Delivery": orders.filter((o) => o.status === "Out for Delivery").length,
-    Delivered: orders.filter((o) => o.status === "Delivered").length,
-    Cancelled: orders.filter((o) => o.status === "Cancelled").length,
+    Cooking: orders.filter((o) => o.status?.toLowerCase() === "cooking").length,
+    Delivery: orders.filter((o) => o.status?.toLowerCase() === "delivery").length,
+    Delivering: orders.filter((o) => o.status?.toLowerCase() === "delivering").length,
+    Delivered: orders.filter((o) => o.status?.toLowerCase() === "delivered").length,
   };
 
   return (
@@ -233,7 +150,7 @@ const OrderManagementView = () => {
         </div>
 
         {/* Status Filter Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {Object.entries(statusCounts).map(([status, count]) => (
             <Card
               key={status}
@@ -269,67 +186,67 @@ const OrderManagementView = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Store</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                <span className="ml-2 text-muted-foreground">Loading orders...</span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        No orders found
-                      </TableCell>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Store</TableHead>
+                      <TableHead>Town</TableHead>
+                      <TableHead>Delivery Person</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredOrders.map((order) => (
-                      <TableRow key={order.orderId}>
-                        <TableCell className="font-medium">{order.orderId}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{order.customerName}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {order.customerPhone}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{order.storeName}</TableCell>
-                        <TableCell className="text-sm">{order.orderDate}</TableCell>
-                        <TableCell className="font-semibold">
-                          {order.totalAmount.toLocaleString()} MMK
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${getStatusColor(order.status)} flex items-center gap-1 w-fit`}>
-                            {getStatusIcon(order.status)}
-                            {order.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{order.paymentMethod}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewDetails(order)}
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrders.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          No orders found
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ) : (
+                      filteredOrders.map((order) => (
+                        <TableRow key={order.orderId}>
+                          <TableCell className="font-medium">{order.orderId}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{order.userName || "N/A"}</div>
+                          </TableCell>
+                          <TableCell>{order.storeName || "N/A"}</TableCell>
+                          <TableCell>{order.townName || "N/A"}</TableCell>
+                          <TableCell>{order.deliveryName || "Not Assigned"}</TableCell>
+                          <TableCell>
+                            <Badge className={`${getStatusColor(order.status)} flex items-center gap-1 w-fit`}>
+                              {getStatusIcon(order.status)}
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">{order.paymentType || "N/A"}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDetails(order)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
 
