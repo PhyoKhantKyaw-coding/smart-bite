@@ -6,7 +6,7 @@ import StoreTable from './chunks/StoreTable';
 import AddEditStoreDialog from './chunks/AddEditStoreDialog';
 import StoreMapDialog from './chunks/StoreMapDialog';
 import AddEditTownDialog from './chunks/AddEditTownDialog';
-import { getAllStores, addStore, updateStore, deleteStore, getAllTowns, addTown } from '@/api/store';
+import { getAllStores, addStore, updateStore, deleteStore, getAllTowns, addTown, addAllInventory } from '@/api/store';
 import type { GetStoreDTO, TownDTO, AddStoreDTO, StoreDTO, AddTownDTO } from '@/api/store/types';
 
 const StoreManagementView = () => {
@@ -21,6 +21,7 @@ const StoreManagementView = () => {
   const [viewMapStore, setViewMapStore] = useState<GetStoreDTO | null>(null);
   const [saving, setSaving] = useState(false);
   const [isDark, setIsDark] = useState(() => document.body.classList.contains('dark'));
+  const [addingInventory, setAddingInventory] = useState<string | null>(null);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -129,6 +130,25 @@ const StoreManagementView = () => {
     } catch (error) {
       console.error('Error deleting store:', error);
       toast.error('Failed to delete store');
+    }
+  };
+
+  const handleAddInventory = async (storeId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+    setAddingInventory(storeId);
+    
+    try {
+      const response = await addAllInventory(storeId);
+      if (response.status === "0" && response.data) {
+        toast.success(response.message || `Added ${response.data.addedCount} items, skipped ${response.data.skippedCount} existing`);
+      } else {
+        toast.error(response.message || 'Failed to add inventory');
+      }
+    } catch (error) {
+      console.error('Error adding inventory:', error);
+      toast.error('Failed to add inventory');
+    } finally {
+      setAddingInventory(null);
     }
   };
 
@@ -285,30 +305,51 @@ const StoreManagementView = () => {
                 {townStores.map((store) => (
                   <div
                     key={store.storeId}
-                    className="p-3 rounded-lg border cursor-pointer hover:shadow-md transition-all duration-200 group"
+                    className="p-3 rounded-lg border hover:shadow-md transition-all duration-200 group"
                     style={{ 
                       backgroundColor: isDark ? '#3f3f46' : '#f9fafb',
                       borderColor: isDark ? '#52525b' : '#e5e7eb'
                     }}
-                    onClick={() => handleViewMap(store)}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <div className="font-medium mb-1 group-hover:text-purple-500 transition-colors" style={{ color: isDark ? '#fff' : '#000' }}>
-                          {store.storeName}
-                        </div>
-                        <div className="text-sm flex items-center gap-1" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>
-                          <MapPin className="w-3 h-3" />
-                          {store.storePlace}
-                        </div>
-                        {store.storePhNo && (
-                          <div className="text-xs mt-1 flex items-center gap-1" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>
-                            <Phone className="w-3 h-3" />
-                            {store.storePhNo}
+                    <div 
+                      className="cursor-pointer"
+                      onClick={() => handleViewMap(store)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="font-medium mb-1 group-hover:text-purple-500 transition-colors" style={{ color: isDark ? '#fff' : '#000' }}>
+                            {store.storeName}
                           </div>
-                        )}
+                          <div className="text-sm flex items-center gap-1" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>
+                            <MapPin className="w-3 h-3" />
+                            {store.storePlace}
+                          </div>
+                          {store.storePhNo && (
+                            <div className="text-xs mt-1 flex items-center gap-1" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>
+                              <Phone className="w-3 h-3" />
+                              {store.storePhNo}
+                            </div>
+                          )}
+                        </div>
+                        <MapPin className="w-5 h-5 text-purple-400 group-hover:text-purple-500 transition-colors" />
                       </div>
-                      <MapPin className="w-5 h-5 text-purple-400 group-hover:text-purple-500 transition-colors" />
+                    </div>
+                    <div className="mt-2 pt-2 border-t" style={{ borderColor: isDark ? '#52525b' : '#e5e7eb' }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full gap-2 text-xs"
+                        onClick={(e) => handleAddInventory(store.storeId, e)}
+                        disabled={addingInventory === store.storeId}
+                        style={{
+                          backgroundColor: isDark ? '#27272a' : '#fff',
+                          borderColor: '#a855f7',
+                          color: '#a855f7'
+                        }}
+                      >
+                        <Package className="w-3 h-3" />
+                        {addingInventory === store.storeId ? 'Adding...' : 'Add Store Inventory'}
+                      </Button>
                     </div>
                   </div>
                 ))}

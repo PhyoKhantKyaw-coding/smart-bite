@@ -48,6 +48,14 @@ export interface AddStoreInventoryDTO {
   inventory?: StoreInventoryDTO[];
 }
 
+export interface AddInventoryResponseDTO {
+  success: boolean;
+  message: string;
+  addedCount: number;
+  skippedCount: number;
+  totalFoods: number;
+}
+
 export interface StoreInventoryModel {
   inventoryId?: string;
   storeId?: string;

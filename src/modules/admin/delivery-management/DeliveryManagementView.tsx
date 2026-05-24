@@ -34,7 +34,7 @@ interface DeliveryPerson {
   completedToday: number;
   earnings: number;
   joinedDate: string;
-  avatar: string;
+  profile?: string;
 }
 
 const DeliveryManagementView = () => {
@@ -77,7 +77,7 @@ const DeliveryManagementView = () => {
           completedToday: 0,
           earnings: 0,
           joinedDate: new Date().toISOString().split("T")[0],
-          avatar: d.profile || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.deliveryName}`,
+          profile: d.profile,
         }));
         setDeliveryPersons(mappedData);
         setTotalCount(response.data.totalCount || 0);

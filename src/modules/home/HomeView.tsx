@@ -226,7 +226,7 @@ const Home = () => {
             </div>
           </div>
         </section>
-        <section className="py-12">
+        <section className="p-12 pr-15">
           <div className="container">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold">{selectedCategory || "All Foods"}</h2>

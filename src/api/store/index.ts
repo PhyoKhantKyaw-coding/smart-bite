@@ -5,7 +5,8 @@ import type {
   AddStoreDTO, 
   GetStoreDTO,
   TownDTO,
-  AddTownDTO
+  AddTownDTO,
+  AddInventoryResponseDTO
 } from './types';
 
 // Add new store
@@ -55,5 +56,11 @@ export const addTown = async (data: AddTownDTO): Promise<ResponseDTO<boolean>> =
 // Get all towns
 export const getAllTowns = async (): Promise<ResponseDTO<TownDTO[]>> => {
   const response = await axios.get('/api/Store/towns');
+  return response.data;
+};
+
+// Add all inventory items to a store
+export const addAllInventory = async (storeId: string): Promise<ResponseDTO<AddInventoryResponseDTO>> => {
+  const response = await axios.post(`/api/Store/inventory/add-all/${storeId}`);
   return response.data;
 };
