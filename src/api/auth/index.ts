@@ -76,14 +76,25 @@ export const resetOTP = {
 	}
 };
 
-// Forget Password mutation
+// Send OTP mutation
+export const sendOTP = {
+	useMutation: (opt?: Partial<UseMutationOptions<ResponseDTO<boolean>, Error, SendOTPRequest>>) => {
+		return useMutation<ResponseDTO<boolean>, Error, SendOTPRequest>({
+			mutationFn: async (dto) => {
+				const request = await axios.post(`/api/User/send-otp`, dto);
+				return request.data;
+			},
+			...opt
+		});
+	}
+};
+
+// Forget Password mutation (body)
 export const forgetPassword = {
-	useMutation: (opt?: Partial<UseMutationOptions<ResponseDTO<boolean>, Error, { email: string; newPassword: string }>>) => {
-		return useMutation<ResponseDTO<boolean>, Error, { email: string; newPassword: string }>({
-			mutationFn: async ({ email, newPassword }) => {
-				const request = await axios.post(`/api/User/forget-password`, null, {
-					params: { email, newPassword }
-				});
+	useMutation: (opt?: Partial<UseMutationOptions<ResponseDTO<boolean>, Error, ForgetPasswordRequest>>) => {
+		return useMutation<ResponseDTO<boolean>, Error, ForgetPasswordRequest>({
+			mutationFn: async (dto) => {
+				const request = await axios.post(`/api/User/forget-password`, dto);
 				return request.data;
 			},
 			...opt

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/UseAuth';
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
-import { loginUser, googleLogin, registerUser, verifyEmail, resetOTP, forgetPassword } from '@/api/auth';
+import { loginUser, googleLogin, registerUser, verifyEmail, resetOTP, forgetPassword, sendOTP } from '@/api/auth';
 import { getUserLocation, getDeviceToken } from '@/lib/deviceUtils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -37,9 +37,23 @@ const LoginView = () => {
 
   // Forget Password Dialog state
   const [showForgetPasswordDialog, setShowForgetPasswordDialog] = useState(false);
+  const [forgetPasswordStep, setForgetPasswordStep] = useState<'email' | 'otp' | 'reset'>('email');
   const [forgetPasswordEmail, setForgetPasswordEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [forgetPasswordError, setForgetPasswordError] = useState('');
+  const [forgetOtpCode, setForgetOtpCode] = useState('');
+  const [countdown, setCountdown] = useState(0);
+
+  // Pending registration data (stored during OTP flow)
+  const [pendingSignup, setPendingSignup] = useState<{
+    userName: string;
+    userEmail: string;
+    userPassword: string;
+    userPhNo: string;
+    profileImage: File | null;
+    location: { latitude: number; longitude: number };
+    deviceToken: string;
+  } | null>(null);
 
   const loginMutation = loginUser.useMutation({
     onSuccess: (data) => {
@@ -73,13 +87,9 @@ const LoginView = () => {
   const signupMutation = registerUser.useMutation({
     onSuccess: (data) => {
       if (data.status === 0) {
-        // Show OTP verification dialog instead of auto-login
-        setOtpEmail(signupData.userEmail);
-        setShowOtpDialog(true);
         setSignupError('');
-        // Clear signup input fields
-        setSignupData({ userName: '', userEmail: '', userPassword: '', userPhNo: '' });
-        setProfileImage(null);
+        setActiveTab('login');
+        setLoginEmail(otpEmail);
       } else {
         setSignupError(data.message || 'Signup failed');
       }
@@ -90,22 +100,7 @@ const LoginView = () => {
     }
   });
 
-  const verifyEmailMutation = verifyEmail.useMutation({
-    onSuccess: (data) => {
-      if (data.status === 0) {
-        setOtpError('');
-        setShowOtpDialog(false);
-        setActiveTab('login');
-        setLoginEmail(otpEmail);
-      } else {
-        setOtpError('Invalid OTP code');
-      }
-    },
-    onError: (error) => {
-      setOtpError('An error occurred during verification');
-      console.error(error);
-    }
-  });
+  const verifyEmailMutation = verifyEmail.useMutation();
 
   const resendOtpMutation = resetOTP.useMutation({
     onSuccess: (data) => {
@@ -121,27 +116,25 @@ const LoginView = () => {
     }
   });
 
-  const forgetPasswordMutation = forgetPassword.useMutation({
-    onSuccess: (data) => {
-      if (data.status === 0 && data.data === true) {
-        setShowForgetPasswordDialog(false);
-        setForgetPasswordError('');
-        setLoginEmail(forgetPasswordEmail);
-      } else {
-        setForgetPasswordError(data.message || 'Failed to reset password');
-      }
-    },
-    onError: (error) => {
-      setForgetPasswordError('An error occurred while resetting password');
-      console.error(error);
-    }
-  });
+  const forgetPasswordMutation = forgetPassword.useMutation();
+
+  const sendOtpMutation = sendOTP.useMutation();
 
   React.useEffect(() => {
     if (user) {
       navigate('/');
     }
   }, [user, navigate]);
+
+  // Countdown timer for forget password OTP
+  React.useEffect(() => {
+    if (countdown > 0) {
+      const timer = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [countdown]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,25 +165,40 @@ const LoginView = () => {
     setSignupError('');
 
     try {
-      // Get location and device token
       const location = await getUserLocation();
       const deviceToken = getDeviceToken();
 
-      const formData = new FormData();
-      formData.append('UserName', signupData.userName);
-      formData.append('UserEmail', signupData.userEmail);
-      formData.append('UserPassword', signupData.userPassword);
-      formData.append('UserPhNo', signupData.userPhNo);
-      formData.append('RoleName', 'User');
-      formData.append('Latitude', location.latitude.toString());
-      formData.append('Longitude', location.longitude.toString());
-      formData.append('DeviceToken', deviceToken);
-      
-      if (profileImage) {
-        formData.append('UserProfileFile', profileImage);
-      }
+      setPendingSignup({
+        userName: signupData.userName,
+        userEmail: signupData.userEmail,
+        userPassword: signupData.userPassword,
+        userPhNo: signupData.userPhNo,
+        profileImage,
+        location,
+        deviceToken
+      });
 
-      signupMutation.mutate(formData);
+      sendOtpMutation.mutate(
+        { email: signupData.userEmail, type: 'Register' },
+        {
+          onSuccess: (data) => {
+            if (data.status === 0) {
+              setOtpEmail(signupData.userEmail);
+              setShowOtpDialog(true);
+              setSignupError('');
+              setSignupData({ userName: '', userEmail: '', userPassword: '', userPhNo: '' });
+              setProfileImage(null);
+            } else {
+              setSignupError(data.message || 'Failed to send OTP');
+              setPendingSignup(null);
+            }
+          },
+          onError: () => {
+            setSignupError('Failed to send OTP');
+            setPendingSignup(null);
+          }
+        }
+      );
     } catch (error) {
       setSignupError('Failed to get location or device information');
       console.error(error);
@@ -200,17 +208,120 @@ const LoginView = () => {
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
     setOtpError('');
-    verifyEmailMutation.mutate({ email: otpEmail, otp: otpCode });
+
+    verifyEmailMutation.mutate(
+      { email: otpEmail, otp: otpCode },
+      {
+        onSuccess: (data) => {
+          if (data.status === 0) {
+            setOtpError('');
+            setShowOtpDialog(false);
+
+            if (pendingSignup) {
+              const formData = new FormData();
+              formData.append('UserName', pendingSignup.userName);
+              formData.append('UserEmail', pendingSignup.userEmail);
+              formData.append('UserPassword', pendingSignup.userPassword);
+              formData.append('UserPhNo', pendingSignup.userPhNo);
+              formData.append('RoleName', 'User');
+              formData.append('Latitude', pendingSignup.location.latitude.toString());
+              formData.append('Longitude', pendingSignup.location.longitude.toString());
+              formData.append('DeviceToken', pendingSignup.deviceToken);
+              formData.append('OTP', otpCode);
+              if (pendingSignup.profileImage) {
+                formData.append('UserProfileFile', pendingSignup.profileImage);
+              }
+
+              signupMutation.mutate(formData);
+              setPendingSignup(null);
+            } else {
+              setActiveTab('login');
+              setLoginEmail(otpEmail);
+            }
+          } else {
+            setOtpError('Invalid OTP code');
+          }
+        },
+        onError: () => {
+          setOtpError('An error occurred during verification');
+        }
+      }
+    );
   };
 
   const handleResendOtp = () => {
     resendOtpMutation.mutate(otpEmail);
   };
 
-  const handleForgetPassword = (e: React.FormEvent) => {
+  const handleSendForgetOtp = (e: React.FormEvent) => {
     e.preventDefault();
     setForgetPasswordError('');
-    forgetPasswordMutation.mutate({ email: forgetPasswordEmail, newPassword });
+
+    sendOtpMutation.mutate(
+      { email: forgetPasswordEmail, type: 'ForgetPassword' },
+      {
+        onSuccess: (data) => {
+          if (data.status === 0) {
+            setCountdown(30);
+            setForgetPasswordStep('otp');
+            setForgetPasswordError('');
+          } else {
+            setForgetPasswordError(data.message || 'Failed to send OTP');
+          }
+        },
+        onError: () => {
+          setForgetPasswordError('Failed to send OTP');
+        }
+      }
+    );
+  };
+
+  const handleVerifyForgetOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgetPasswordError('');
+
+    verifyEmailMutation.mutate(
+      { email: forgetPasswordEmail, otp: forgetOtpCode },
+      {
+        onSuccess: (data) => {
+          if (data.status === 0) {
+            setForgetPasswordStep('reset');
+            setForgetPasswordError('');
+          } else {
+            setForgetPasswordError('Invalid OTP code');
+          }
+        },
+        onError: () => {
+          setForgetPasswordError('An error occurred during verification');
+        }
+      }
+    );
+  };
+
+  const handleResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgetPasswordError('');
+
+    forgetPasswordMutation.mutate(
+      { email: forgetPasswordEmail, newPassword },
+      {
+        onSuccess: (data) => {
+          if (data.status === 0) {
+            setShowForgetPasswordDialog(false);
+            setForgetPasswordError('');
+            setForgetPasswordStep('email');
+            setForgetOtpCode('');
+            setCountdown(0);
+            setLoginEmail(forgetPasswordEmail);
+          } else {
+            setForgetPasswordError(data.message || 'Failed to reset password');
+          }
+        },
+        onError: () => {
+          setForgetPasswordError('An error occurred while resetting password');
+        }
+      }
+    );
   };
 
   if (user) return null;
@@ -548,63 +659,186 @@ const LoginView = () => {
       </Dialog>
 
       {/* Forget Password Dialog */}
-      <Dialog open={showForgetPasswordDialog} onOpenChange={setShowForgetPasswordDialog}>
+      <Dialog open={showForgetPasswordDialog} onOpenChange={(open) => {
+        if (!open) {
+          setForgetPasswordStep('email');
+          setForgetOtpCode('');
+          setCountdown(0);
+          setForgetPasswordError('');
+        }
+        setShowForgetPasswordDialog(open);
+      }}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription>
-              Enter your email and new password to reset your account password.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleForgetPassword} className="space-y-4">
-            <div>
-              <label htmlFor="forget-email" className="block text-sm font-medium mb-2">Email</label>
-              <Input
-                id="forget-email"
-                type="email"
-                value={forgetPasswordEmail}
-                onChange={e => setForgetPasswordEmail(e.target.value)}
-                placeholder="your.email@example.com"
-                className="w-full"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="forget-new-password" className="block text-sm font-medium mb-2">New Password</label>
-              <Input
-                id="forget-new-password"
-                type="password"
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full"
-                required
-              />
-            </div>
-            {forgetPasswordError && <div className="text-red-500 text-sm">{forgetPasswordError}</div>}
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowForgetPasswordDialog(false)}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600"
-                disabled={forgetPasswordMutation.isPending}
-              >
-                {forgetPasswordMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Resetting...
-                  </>
-                ) : 'Reset Password'}
-              </Button>
-            </DialogFooter>
-          </form>
+          {forgetPasswordStep === 'email' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Forget Password</DialogTitle>
+                <DialogDescription>
+                  Enter your email to receive a verification code.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSendForgetOtp} className="space-y-4">
+                <div>
+                  <label htmlFor="forget-email" className="block text-sm font-medium mb-2">Email</label>
+                  <Input
+                    id="forget-email"
+                    type="email"
+                    value={forgetPasswordEmail}
+                    onChange={e => setForgetPasswordEmail(e.target.value)}
+                    placeholder="your.email@example.com"
+                    className="w-full"
+                    required
+                  />
+                </div>
+                {forgetPasswordError && <div className="text-red-500 text-sm">{forgetPasswordError}</div>}
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowForgetPasswordDialog(false)}
+                    className="w-full sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600"
+                    disabled={sendOtpMutation.isPending}
+                  >
+                    {sendOtpMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : 'Send OTP'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </>
+          )}
+
+          {forgetPasswordStep === 'otp' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Enter OTP</DialogTitle>
+                <DialogDescription>
+                  We've sent a verification code to {forgetPasswordEmail}. Please enter it below.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleVerifyForgetOtp} className="space-y-4">
+                <div>
+                  <label htmlFor="forget-otp" className="block text-sm font-medium mb-2">Verification Code</label>
+                  <Input
+                    id="forget-otp"
+                    type="text"
+                    value={forgetOtpCode}
+                    onChange={e => setForgetOtpCode(e.target.value)}
+                    placeholder="Enter 6-digit code"
+                    className="w-full"
+                    maxLength={6}
+                    required
+                  />
+                </div>
+                {countdown > 0 && (
+                  <p className="text-sm text-gray-500">Resend available in {countdown}s</p>
+                )}
+                {forgetPasswordError && <div className="text-red-500 text-sm">{forgetPasswordError}</div>}
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={countdown > 0 || sendOtpMutation.isPending}
+                    onClick={() => {
+                      sendOtpMutation.mutate(
+                        { email: forgetPasswordEmail, type: 'ForgetPassword' },
+                        {
+                          onSuccess: (data) => {
+                            if (data.status === 0) {
+                              setCountdown(30);
+                              setForgetPasswordError('');
+                            } else {
+                              setForgetPasswordError(data.message || 'Failed to resend OTP');
+                            }
+                          },
+                          onError: () => {
+                            setForgetPasswordError('Failed to resend OTP');
+                          }
+                        }
+                      );
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    {countdown > 0 ? `Resend in ${countdown}s` : sendOtpMutation.isPending ? 'Sending...' : 'Resend'}
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600"
+                    disabled={verifyEmailMutation.isPending}
+                  >
+                    {verifyEmailMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : 'Verify OTP'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </>
+          )}
+
+          {forgetPasswordStep === 'reset' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Reset Password</DialogTitle>
+                <DialogDescription>
+                  Enter your new password for {forgetPasswordEmail}.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div>
+                  <label htmlFor="forget-new-password" className="block text-sm font-medium mb-2">New Password</label>
+                  <Input
+                    id="forget-new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full"
+                    required
+                  />
+                </div>
+                {forgetPasswordError && <div className="text-red-500 text-sm">{forgetPasswordError}</div>}
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setForgetPasswordStep('email');
+                      setForgetOtpCode('');
+                      setCountdown(0);
+                      setShowForgetPasswordDialog(false);
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600"
+                    disabled={forgetPasswordMutation.isPending}
+                  >
+                    {forgetPasswordMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Resetting...
+                      </>
+                    ) : 'Reset Password'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

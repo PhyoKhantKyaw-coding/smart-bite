@@ -21,6 +21,17 @@ type AddUserDTO = {
 	Latitude?: number;
 	Longitude?: number;
 	DeviceToken?: string;
+	OTP?: string;
+};
+
+type SendOTPRequest = {
+	email: string;
+	type: string;
+};
+
+type ForgetPasswordRequest = {
+	email: string;
+	newPassword: string;
 };
 
 type LoginDTO = {
