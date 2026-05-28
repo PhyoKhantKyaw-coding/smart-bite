@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import DeliveryDashboardView from "./DeliveryDashboardView";
 import DeliveredOrders from "./chunks/DeliveredOrders";
 import OrdersForDelivery from "./chunks/OrdersForDelivery";
 import { getOrdersByStatus } from "@/api/delivery";
 import { DeliveryOrder, DeliveredOrder } from "@/types/delivery";
 
 const DeliveryView = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("orders");
   const [deliveryOrders, setDeliveryOrders] = useState<DeliveryOrder[]>([]);
   const [deliveringOrders, setDeliveringOrders] = useState<DeliveryOrder[]>([]);
   const [deliveredOrders, setDeliveredOrders] = useState<DeliveredOrder[]>([]);
@@ -124,10 +123,7 @@ const DeliveryView = () => {
   return (
     <div className="w-full space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="dashboard" className="text-sm md:text-base">
-            Dashboard
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="orders" className="text-sm md:text-base">
             Orders for Delivery
           </TabsTrigger>
@@ -135,10 +131,6 @@ const DeliveryView = () => {
             Delivered Orders
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="dashboard" className="mt-0">
-          <DeliveryDashboardView />
-        </TabsContent>
 
         <TabsContent value="orders" className="mt-0">
           <OrdersForDelivery 

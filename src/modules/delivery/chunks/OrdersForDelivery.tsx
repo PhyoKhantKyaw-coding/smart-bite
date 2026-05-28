@@ -65,28 +65,27 @@ const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliver
   // Filter orders by status - cast to DeliveryOrder type
   // Orders with "Delivery" status should show as new orders
   const newOrders = localOrders.filter((order) => {
-    const status = order.status;
-    console.log("Checking order status:", status);
-    return status === "Delivery" || status === "New";
+    const status = order.status?.toLowerCase();
+    console.log("Checking order status:", order.status);
+    return status === "delivery" || status === "new";
   });
   
   const inProgressOrders = localOrders.filter((order) => {
-    const status = order.status;
+    const status = order.status?.toLowerCase();
     return status === "delivering";
   });
 
   const getStatusColor = (status: DeliveryOrder["status"]) => {
-    switch (status) {
-      case "New":
-      case "Delivery":
+    switch (status?.toLowerCase()) {
+      case "new":
+      case "delivery":
         return "bg-blue-500";
       case "delivering":
         return "bg-orange-500";
-      case "Picked Up":
+      case "picked up":
         return "bg-purple-500";
-      case "In Transit":
+      case "in transit":
         return "bg-orange-500";
-      case "Delivered":
       case "delivered":
         return "bg-green-500";
       case "cancel":
@@ -203,7 +202,7 @@ const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliver
                             size="sm"
                             variant="destructive"
                             className="flex-1 sm:flex-initial"
-                            onClick={() => handleUpdateStatus(order.id, "cancel")}
+                            onClick={() => handleUpdateStatus(order.id, "Cancel")}
                             disabled={updatingOrders.has(order.id)}
                           >
                             <XCircle className="w-4 h-4 mr-2" />
@@ -212,7 +211,7 @@ const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliver
                       <Button
                         size="sm"
                         className="gradient-primary flex-1 sm:flex-initial"
-                        onClick={() => handleUpdateStatus(order.id, "delivering")}
+                        onClick={() => handleUpdateStatus(order.id, "Delivering")}
                         disabled={updatingOrders.has(order.id)}
                       >
                             <CheckCircle className="w-4 h-4 mr-2" />
@@ -309,13 +308,13 @@ const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliver
                         <Navigation className="w-4 h-4 mr-2" />
                         Track Order
                       </Button>
-                      {order.status === "delivering" ? (
+                      {order.status?.toLowerCase() === "delivering" ? (
                         <>
                           <Button
                             size="sm"
                             variant="destructive"
                             className="flex-1 sm:flex-initial"
-                            onClick={() => handleUpdateStatus(order.id, "cancel")}
+                            onClick={() => handleUpdateStatus(order.id, "Cancel")}
                             disabled={updatingOrders.has(order.id)}
                           >
                             <XCircle className="w-4 h-4 mr-2" />
@@ -324,7 +323,7 @@ const OrdersForDelivery = ({ orders = [], loading, onRefresh }: OrdersForDeliver
                           <Button
                             size="sm"
                             className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-initial"
-                            onClick={() => handleUpdateStatus(order.id, "delivered")}
+                            onClick={() => handleUpdateStatus(order.id, "Delivered")}
                             disabled={updatingOrders.has(order.id)}
                           >
                             <CheckCircle className="w-4 h-4 mr-2" />

@@ -52,7 +52,7 @@ const OrdersDialog: React.FC<OrdersDialogProps> = ({ open, onOpenChange }) => {
   const [voucherData, setVoucherData] = useState<Order | null>(null);
   const [showVoucher, setShowVoucher] = useState(false);
 
-  const tabs = ["All", "Cooking", "Delivery", "Delivering", "Deliveried"];
+  const tabs = ["All", "Cooking", "Delivery", "Delivering", "Delivered"];
 
   useEffect(() => {
     if (open) {
@@ -108,7 +108,6 @@ const OrdersDialog: React.FC<OrdersDialogProps> = ({ open, onOpenChange }) => {
         return "bg-blue-500";
       case "delivering":
         return "bg-purple-500";
-      case "deliveried":
       case "delivered":
         return "bg-green-500";
       default:
